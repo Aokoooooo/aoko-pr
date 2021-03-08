@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "typescript",
+      "tsconfig": "tsconfig.json",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "label": "tsc",
+      "dependsOn": "before tsc",
+      "isBackground": true
+    },
+    {
+      "label": "before tsc",
+      "type": "shell",
+      "command": "rm -rf ${workspaceFolder}/dist",
+      "isBackground": true
+    }
+  ]
+}
