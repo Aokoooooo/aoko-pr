@@ -38,7 +38,6 @@ module.exports = {
         selector: [
           'method',
           'function',
-          'parameter',
           'accessor',
           'classProperty',
           'parameterProperty',
@@ -61,7 +60,7 @@ module.exports = {
       },
       {
         format: ['PascalCase'],
-        selector: ['enumMember', 'class'],
+        selector: ['enumMember', 'class', 'typeParameter'],
       },
       {
         custom: {
@@ -83,12 +82,17 @@ module.exports = {
       },
       {
         format: ['camelCase', 'snake_case'],
-        selector: ['typeParameter', 'typeProperty'],
+        selector: ['typeProperty'],
       },
       {
         format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
         leadingUnderscore: 'allow',
         selector: 'variable',
+      },
+      {
+        format: ['camelCase'],
+        leadingUnderscore: 'allow',
+        selector: 'parameter',
       },
       {
         format: ['camelCase', 'UPPER_CASE', 'snake_case'],
@@ -169,7 +173,7 @@ module.exports = {
       'error',
       {
         detectObjects: true,
-        ignore: [-1, 0, 1, 2, 10, 60, 100, 1000],
+        ignore: [-1, 0, 1, 2, 10, 16, 24, 30, 60, 100, 1000],
         ignoreArrayIndexes: true,
       },
     ],

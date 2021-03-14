@@ -1,55 +1,31 @@
 {
-  "name": "missevan-pr",
-  "version": "0.0.1",
-  "description": "a commander for the missevan bot to create PRs to the stable branch",
+  "name": "aoko-pr",
+  "version": "1.0.0",
+  "description": "a cli for creating & updateing PRs to the stable branch",
   "author": "Aoko",
-  "homepage": "https://github.com/Aokoooooo/missevan-pr",
+  "homepage": "https://github.com/Aokoooooo/aoko-pr",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "bin": "dist/src/index.js",
   "scripts": {
-    "test": "jest",
     "tsc": "cross-env rm -rf ./dist && npx tsc",
-    "build": "npm run tsc && cross-env rm -rf ./min && npx webpack",
-    "prepublishOnly": "npm run build"
+    "start": "npm run tsc -- -w",
+    "test": "node ./dist/src/index.js",
+    "prepublishOnly": "npm run tsc"
   },
   "devDependencies": {
     "@types/inquirer": "^7.3.1",
-    "@types/jest": "^26.0.20",
+    "@types/jsdom": "^16.2.7",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "cross-env": "^7.0.3",
     "eslint": "^7.20.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
-    "husky": "^4.3.8",
-    "jest": "^26.6.3",
-    "lint-staged": "^10.5.4",
-    "prettier": "^2.2.1",
-    "ts-jest": "^26.5.2",
-    "typescript": "^4.0.6",
-    "webpack": "^5.24.1",
-    "webpack-cli": "^4.5.0"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm run test"
-    }
-  },
-  "lint-staged": {
-    "**/*.{js,ts,tsx,json,md}": [
-      "prettier --write",
-      "git add"
-    ],
-    "**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "git add"
-    ]
+    "typescript": "^4.0.6"
   },
   "files": [
     "dist",
-    "min",
     "src",
     "LICENSE",
     "package.json",
@@ -57,9 +33,11 @@
   ],
   "dependencies": {
     "@octokit/rest": "^18.2.1",
-    "axios": "^0.21.1",
     "chalk": "^4.1.0",
     "commander": "^7.1.0",
-    "inquirer": "^7.3.3"
+    "dayjs": "^1.10.4",
+    "htmltidy2": "^0.3.0",
+    "inquirer": "^7.3.3",
+    "jsdom": "^16.5.0"
   }
 }
