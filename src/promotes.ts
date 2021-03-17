@@ -89,7 +89,7 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
     opts.token = selectResult.token === INPUT_GITHUB_TOKEN_MANUALY ? '' : selectResult.token
   }
   let _token = forceNewToken ? opts?.token : opts?.token || config.token
-  if (!_token || !config.username) {
+  if (!_token || !config.username && !forceNewToken) {
     const r = await inquirer.prompt({
       type: 'input',
       name: 'token',

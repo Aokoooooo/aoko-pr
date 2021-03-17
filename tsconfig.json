@@ -14,7 +14,6 @@
     "noUnusedParameters": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "declaration": true,
     "baseUrl": ".",
     "outDir": "./dist",
     "resolveJsonModule": true,

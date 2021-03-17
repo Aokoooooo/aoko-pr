@@ -1,9 +1,10 @@
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import { logger, updateLoggerLevelByDebug } from './logger'
 import { IConfigFile } from './types'
 
-const CONFIG_FILE_NAME = 'config.json'
+const CONFIG_FILE_NAME = '.aoko-pr.config.json'
 
 export const INIT_CONFIG: IConfigFile = {
   token: '',
@@ -17,13 +18,13 @@ export const INIT_CONFIG: IConfigFile = {
 export let REPO_NAME = 'audio-chatroom'
 export let UPSTREAM_OWNER = 'MiaoSiLa'
 
-export const formatToJSONString = (data: any) => JSON.stringify(data, undefined, 2)
+const getConfigFilePath = () => path.join(os.homedir(), CONFIG_FILE_NAME)
 
-const getConfigFilePath = () => path.join(process.cwd(), CONFIG_FILE_NAME)
+export const formatToJSONString = (data: any) => JSON.stringify(data, undefined, 2)
 
 export const writeConfigFile = (data?: IConfigFile) => {
   try {
-    fs.writeFileSync(CONFIG_FILE_NAME, formatToJSONString(data))
+    fs.writeFileSync(getConfigFilePath(), formatToJSONString(data))
   } catch (e) {
     logger.error(`更新配置文件失败\n${e.message}`)
     logger.error('可以尝试通过 \'config -r\' 指令来重置配置信息')
