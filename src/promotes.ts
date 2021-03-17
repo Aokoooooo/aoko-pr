@@ -89,7 +89,7 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
     opts.token = selectResult.token === INPUT_GITHUB_TOKEN_MANUALY ? '' : selectResult.token
   }
   let _token = forceNewToken ? opts?.token : opts?.token || config.token
-  if (!_token || !config.username && !forceNewToken) {
+  if (!_token || (!config.username && !forceNewToken)) {
     const r = await inquirer.prompt({
       type: 'input',
       name: 'token',
@@ -189,7 +189,12 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
     total -= 100
     result.push(...r.data)
   }
-  return result.filter((v) => v.author?.login && v.author.login !== config.username)
+  return result.filter(
+    (v) =>
+      v.author?.login &&
+      v.author.login !== config.username &&
+      v.commit.message.startsWith('frontend')
+  )
 }
 
 const getUpstreamMasterPromopt = async () => {
@@ -551,9 +556,10 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
       }
       data
         .filter(
-          (v) => v.user?.login === (config.username || '')
-            && (untilDate ? !untilDate.isAfter(v.created_at as string) : true)
-            && (sinceDate ? !sinceDate.isBefore(v.created_at as string) : true)
+          (v) =>
+            v.user?.login === (config.username || '') &&
+            (untilDate ? !untilDate.isAfter(v.created_at as string) : true) &&
+            (sinceDate ? !sinceDate.isBefore(v.created_at as string) : true)
         )
         .forEach((v) => {
           const item = {
