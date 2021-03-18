@@ -165,7 +165,7 @@ const parseTableRow = (dom: HTMLElement) => {
   return map
 }
 
-const updatePRDescPrompt = (dom: HTMLElement, data: ITableRowData) => {
+const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
   const rows = dom.getElementsByTagName('tr')
   if (!rows.length) {
     return false
@@ -236,7 +236,7 @@ export const parseTemplate = async (
     return createTemplate(data as ITableRowDataMap, false)
   }
   if (isUpdateTableRow) {
-    const updated = updatePRDescPrompt(tableBody, data as ITableRowData)
+    const updated = updatePRDesc(tableBody, data as ITableRowData)
     if (!updated) {
       logger.error('未找到合适的更新对象，请确认 PR body 存在且符合解析规则')
       process.exit(1)

@@ -6,7 +6,7 @@ import {
   createPRPrompt,
   deleteBranchPrompt,
   getRecentPRPrompt,
-  updatePRDescPrompt,
+  checkPrompt,
   updatePRPrompt,
 } from './promotes'
 
@@ -39,16 +39,15 @@ commander
   .action(updatePRPrompt)
 
 commander
-  .command('desc')
-  .alias('d')
-  .description('更新 PR 描述 table 中的单条数据')
+  .command('check')
+  .description('更新 PR 描述 table 中的单条数据（验证测试结果或修改备注）')
   .option('-i, --id <id>', 'PR ID')
   .option('-a, --author <author>', 'commit author')
   .option('-c, --commit <commit>', 'commit msg')
   .option('-u, --uat [uat]', 'UAT check。true or false，不传代表一会儿自行选择)')
   .option('-p, --prod [prod]', 'PROD check。true or false，不传代表一会儿自行选择')
   .option('-m, --msg [msg]', '备注信息')
-  .action(updatePRDescPrompt)
+  .action(checkPrompt)
 
 commander
   .command('delete-branch')

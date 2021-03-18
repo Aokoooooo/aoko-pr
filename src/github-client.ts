@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest'
+import ProxyAgent  from 'proxy-agent'
 import { logger } from './logger'
 import { IConfigFile, TReturnType } from './types'
 import { getAuthHistory, getConfigFile, writeConfigFile } from './utils'
@@ -13,7 +14,14 @@ const getCurrentUser = async (client: Octokit) => {
 export let currentUser: TReturnType<typeof getCurrentUser>|null = null
 
 export const updateClientByToken = async (token: string) => {
-  client = await new Octokit({ auth: token, log: logger })
+  const config = getConfigFile()
+  client = await new Octokit({
+    auth: token,
+    log: logger,
+    request: {
+      agent: config.proxy ? new ProxyAgent(config.proxy) : undefined,
+    },
+  })
   client.hook.error('request', (e) => {
     logger.error(`client err(${(e as any).status || 0}): ${e.message}`)
     process.exit(1)

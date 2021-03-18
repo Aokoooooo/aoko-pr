@@ -1,6 +1,6 @@
 {
   "name": "aoko-pr",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "a cli for creating & updateing PRs to the stable branch",
   "author": "Aoko",
   "homepage": "https://github.com/Aokoooooo/aoko-pr",
@@ -41,6 +41,7 @@
     "htmltidy2": "^0.3.0",
     "inquirer": "^7.3.3",
     "js-base64": "^3.6.0",
-    "jsdom": "^16.5.0"
+    "jsdom": "^16.5.0",
+    "proxy-agent": "^4.0.1"
   }
 }

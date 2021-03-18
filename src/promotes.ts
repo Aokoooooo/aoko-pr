@@ -381,7 +381,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   logger.info(`PR: ${pr.html_url}`)
 }
 
-interface IUpdatePRDescPromptOtps {
+interface ICheckPromptOtps {
   id?: string | number
   author?: string
   commit?: string
@@ -390,7 +390,7 @@ interface IUpdatePRDescPromptOtps {
   prod?: string | boolean
 }
 
-export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
+export const checkPrompt = async (opts: ICheckPromptOtps) => {
   const { client } = await getBaseData()
   const owner = UPSTREAM_OWNER
   const repo = REPO_NAME

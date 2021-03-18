@@ -10,6 +10,7 @@ export const INIT_CONFIG: IConfigFile = {
   token: '',
   username: '',
   tokenHistory: '',
+  proxy: '',
   debug: false,
   debugRepo: '',
   debugUpstreamOwner: '',

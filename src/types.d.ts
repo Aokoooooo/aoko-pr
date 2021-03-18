@@ -4,6 +4,7 @@ export interface IConfigFile {
   username?: string
   // 登录成功过的所有 token，token 之间用 , 分割
   tokenHistory?: string
+  proxy?: string
   debug?: boolean
   debugRepo?: string
   debugUpstreamOwner?: string
