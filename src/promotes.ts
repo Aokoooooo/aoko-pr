@@ -245,7 +245,7 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
 }
 
 const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt>>, version: string) => {
-  const reg = /^(\d+.)*\d$/
+  const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'
   if (!reg.test(version)) {
     logger.error(`version 更新失败。version 必须满足 ${reg} 的格式（${version}）`)
