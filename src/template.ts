@@ -1,6 +1,7 @@
 import { tidy } from 'htmltidy2'
 import { DOMWindow, JSDOM } from 'jsdom'
 import { logger } from './logger'
+import { escapeHtml } from './utils'
 
 export enum ETableRowType {
   Name = 'name',
@@ -193,7 +194,7 @@ const updatePRDescPrompt = (dom: HTMLElement, data: ITableRowData) => {
   }
   for (let i = 0; i < targetCommits.length; i++) {
     const titleDOM = targetCommits[i].getElementsByClassName(ETableRowType.Title)?.[0]
-    if (titleDOM && titleDOM.innerHTML.trim() === data.title) {
+    if (titleDOM && titleDOM.innerHTML.trim() === escapeHtml(data.title)) {
       const msgDOM = targetCommits[i].getElementsByClassName(ETableRowType.Msg)?.[0]
       if (msgDOM && data.msg) {
         msgDOM.innerHTML = data.msg

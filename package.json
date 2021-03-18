@@ -1,6 +1,6 @@
 {
   "name": "aoko-pr",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "a cli for creating & updateing PRs to the stable branch",
   "author": "Aoko",
   "homepage": "https://github.com/Aokoooooo/aoko-pr",
@@ -22,6 +22,7 @@
     "eslint": "^7.20.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
+    "prettier": "^2.2.1",
     "typescript": "^4.0.6"
   },
   "files": [

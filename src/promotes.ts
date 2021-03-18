@@ -190,10 +190,9 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
     result.push(...r.data)
   }
   return result.filter(
-    (v) =>
-      v.author?.login &&
-      v.author.login !== config.username &&
-      v.commit.message.startsWith('frontend')
+    (v) => v.author?.login
+      && v.author.login !== config.username
+      && v.commit.message.startsWith('frontend')
   )
 }
 
@@ -371,19 +370,18 @@ export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
       })
     ).author
   }
+  const currentCommits = commits.filter((v) => v.author?.login === opts.author)
   if (!opts.commit) {
     opts.commit = await (
       await inquirer.prompt({
         type: 'list',
         name: 'commit',
         message: '请选择提交的标题',
-        choices: commits.map((v) => v.commit.message) as string[],
+        choices: currentCommits.map((v) => v.commit.message) as string[],
       })
     ).commit
   }
-  const commit = commits.filter(
-    (v) => v.author?.login === opts.author && v.commit.message === opts.commit
-  )?.[0]
+  const commit = currentCommits.filter((v) => v.commit.message === opts.commit)?.[0]
   if (!commit) {
     logger.error(`未找到该提交（${opts.author}: ${opts.commit}）`)
     process.exit(0)
@@ -556,10 +554,9 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
       }
       data
         .filter(
-          (v) =>
-            v.user?.login === (config.username || '') &&
-            (untilDate ? !untilDate.isAfter(v.created_at as string) : true) &&
-            (sinceDate ? !sinceDate.isBefore(v.created_at as string) : true)
+          (v) => v.user?.login === (config.username || '')
+            && (untilDate ? !untilDate.isAfter(v.created_at as string) : true)
+            && (sinceDate ? !sinceDate.isBefore(v.created_at as string) : true)
         )
         .forEach((v) => {
           const item = {

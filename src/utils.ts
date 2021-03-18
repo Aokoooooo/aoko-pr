@@ -1,6 +1,6 @@
 import fs from 'fs'
-import path from 'path'
 import os from 'os'
+import path from 'path'
 import { logger, updateLoggerLevelByDebug } from './logger'
 import { IConfigFile } from './types'
 
@@ -75,4 +75,50 @@ export function getAuthHistory(config: IConfigFile, isChoices?: boolean) {
       return data
     })
     : history
+}
+
+export const escapeHtml = (html: string = '') => {
+  const match = /["'&<>]/.exec(html)
+
+  if (!match) {
+    return html
+  }
+
+  let escape
+  let str = ''
+  let index = 0
+  let lastIndex = 0
+
+  for (index = match.index; index < html.length; index++) {
+    switch (html.charCodeAt(index)) {
+      case 34: // "
+        escape = '&quot;'
+        break
+      case 38: // &
+        escape = '&amp;'
+        break
+      case 39: // '
+        escape = '&#39;'
+        break
+      case 60: // <
+        escape = '&lt;'
+        break
+      case 62: // >
+        escape = '&gt;'
+        break
+      default:
+        continue
+    }
+
+    if (lastIndex !== index) {
+      str += html.substring(lastIndex, index)
+    }
+
+    lastIndex = index + 1
+    str += escape
+  }
+
+  return lastIndex !== index
+    ? str + html.substring(lastIndex, index)
+    : str
 }
