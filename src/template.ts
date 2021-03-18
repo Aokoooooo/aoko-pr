@@ -221,7 +221,7 @@ export const parseTemplate = async (
   if (!body) {
     if (isUpdateTableRow) {
       logger.error('解析历史 PR body 失败，请确认 PR body 存在且符合解析规则')
-      process.exit(0)
+      process.exit(1)
     }
     return createTemplate(data as ITableRowDataMap, false)
   }
@@ -231,7 +231,7 @@ export const parseTemplate = async (
   if (!container || !tableBody) {
     if (isUpdateTableRow) {
       logger.error('解析历史 PR body 失败，请确认 PR body 存在且符合解析规则')
-      process.exit(0)
+      process.exit(1)
     }
     return createTemplate(data as ITableRowDataMap, false)
   }
@@ -239,7 +239,7 @@ export const parseTemplate = async (
     const updated = updatePRDescPrompt(tableBody, data as ITableRowData)
     if (!updated) {
       logger.error('未找到合适的更新对象，请确认 PR body 存在且符合解析规则')
-      process.exit(0)
+      process.exit(1)
     }
     return formatDOMToString(DOM)
   }

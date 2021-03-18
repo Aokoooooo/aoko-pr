@@ -1,9 +1,10 @@
 import day from 'dayjs'
 import inquirer from 'inquirer'
+import { encode, decode } from 'js-base64'
 import { authByToken } from './github-client'
 import { logger } from './logger'
 import { ITableRowData, ITableRowDataMap, parseTemplate } from './template'
-import { IConfigFile } from './types'
+import { IConfigFile, TArrayType, TReturnType } from './types'
 import {
   INIT_CONFIG,
   REPO_NAME,
@@ -75,7 +76,7 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
       .filter((v) => !(choices as string[]).some((c) => v.includes(c)))
       .join(',')
     writeFiledOfConfigFile({ tokenHistory: newHistory })
-    process.exit(0)
+    process.exit(1)
   }
   if (opts?.ls) {
     const history = getAuthHistory(config, true)
@@ -119,7 +120,7 @@ const searchBranchPrompt = async () => {
   })
   if (!branches.data.length) {
     logger.error('未找到任何分支')
-    process.exit(0)
+    process.exit(1)
   }
   const result = await inquirer.prompt({
     type: 'list',
@@ -154,7 +155,7 @@ const selectPRPrompt = async () => {
   })
   if (!prs.length) {
     logger.error('未找到任何 PR')
-    process.exit(0)
+    process.exit(1)
   }
   const { id } = await inquirer.prompt({
     type: 'list',
@@ -169,6 +170,7 @@ const selectPRPrompt = async () => {
 interface IUpdatePRPromptOpts {
   id?: string | number
   title?: string
+  version?: string
 }
 
 const getPRCommitsPrompt = async (id: number, total: number) => {
@@ -242,6 +244,48 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
   logger.success(`分支 "${name}" 删除成功`)
 }
 
+const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt>>, version: string) => {
+  const reg = /^(\d+.)*\d$/
+  const filename = 'package.json'
+  if (!reg.test(version)) {
+    logger.error(`version 更新失败。version 必须满足 ${reg} 的格式（${version}）`)
+    return false
+  }
+  const { config, client } = await getBaseData()
+  const owner = config.username || ''
+  logger.log('查询历史 version 中')
+  const oldFile = await client.repos.getContent({
+    owner,
+    repo: REPO_NAME,
+    path: filename,
+    ref: pr.head.ref,
+  })
+  let pkg = { version: ''}
+  try {
+    pkg = JSON.parse(decode((oldFile.data as any)?.content))
+  } catch (_) {
+    logger.error(`解析历史 version 失败，请确认 ${filename} 存在并且内容为合法 JSON`)
+    return false
+  }
+  if (pkg.version === version) {
+    logger.warn(`version 并未发生变化，请确认你想更新的 version（${version}）`)
+    return false
+  }
+  pkg.version = version
+  logger.log('更新 version 中。。。')
+  await client.repos.createOrUpdateFileContents({
+    owner,
+    repo: REPO_NAME,
+    path: filename,
+    message: `version: ${version}`,
+    content: encode(formatToJSONString(pkg)),
+    branch: pr.head.ref,
+    sha: (oldFile.data as any).sha,
+  })
+  logger.success(`version 更新成功，当前 version: ${version}`)
+  return true
+}
+
 export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   const { config, client } = await getBaseData()
   const owner = UPSTREAM_OWNER
@@ -266,6 +310,10 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   await deleteBranchPrompt({ name: newBranchName })
   pr = await getPRPrompt(pr.number)
   logger.success('提交同步成功')
+  let versionChanged = false
+  if (opts.version) {
+    versionChanged = await updateVersionPrompt(pr, opts.version)
+  }
   const commits = await getPRCommitsPrompt(pr.number, pr.commits)
   const groupedCommits: { [login: string]: string[] } = {}
   commits.forEach((v) => {
@@ -318,16 +366,19 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
       baseBodyDataMap[name].push(baseBodyData)
     })
   })
+  const titleMatch = /^(.*)([\(（].*[\)）])$/.exec(pr.title)
+  const titleSuffix = opts.version && versionChanged ? `（${opts.version}）` : ''
+  const newTitle = titleMatch?.[1] && versionChanged ? `${titleMatch[1]}${titleSuffix}` : `${pr.title}${titleSuffix}`
   await client.pulls.update({
     owner,
     repo,
     pull_number: pr.number,
     body: await parseTemplate(baseBodyDataMap, pr.body),
-    title: opts.title,
+    title: opts.title || newTitle,
   })
   logger.success('PR 信息更新成功')
-  logger.success(`“PR#${pr.number}: ${pr.title}” 同步成功`)
-  logger.info(pr.html_url)
+  logger.success(`“PR#${pr.number}: ${opts.title || newTitle}” 同步成功`)
+  logger.info(`PR: ${pr.html_url}`)
 }
 
 interface IUpdatePRDescPromptOtps {
@@ -347,7 +398,7 @@ export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
   if (!opts.msg && !opts.uat && !opts.prod) {
     logger.error('至少得提供一个修改内容')
     logger.info('可以通过 -u -p -msg 提供，细节请通过 -h 了解更多')
-    process.exit(0)
+    process.exit(1)
   }
   logger.log(`正在为 “PR${Number(opts.id) ? `#${opts.id}` : ''}” 的提交的验证信息进行更新。。。`)
   const pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
@@ -384,7 +435,7 @@ export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
   const commit = currentCommits.filter((v) => v.commit.message === opts.commit)?.[0]
   if (!commit) {
     logger.error(`未找到该提交（${opts.author}: ${opts.commit}）`)
-    process.exit(0)
+    process.exit(1)
   }
   logger.log('更新 PR body 中。。。')
   const data: Partial<ITableRowData> = {
@@ -400,7 +451,7 @@ export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
       data.uatChecked = await getBooleanPrompt('UAT 验证是否成功')
     } else {
       console.error('-u, --uat 参数必须传 "true" 或者 "false"')
-      process.exit(0)
+      process.exit(1)
     }
   }
   if (opts.prod) {
@@ -412,7 +463,7 @@ export const updatePRDescPrompt = async (opts: IUpdatePRDescPromptOtps) => {
       data.prodChecked = await getBooleanPrompt('线上验证是否成功')
     } else {
       console.error('-p, --prod 参数必须传 "true" 或者 "false"')
-      process.exit(0)
+      process.exit(1)
     }
   }
   if (opts.msg) {
@@ -462,7 +513,7 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
     }
     if (!branchName) {
       logger.error('请给出一个分支的名字')
-      process.exit(0)
+      process.exit(1)
     }
     logger.log(`查询分支 "${branchName}" 中。。。`)
     await client.repos.getBranch({
@@ -522,11 +573,11 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
   const { config, client } = await getBaseData()
   if (opts.since && !GET_ACTIVITY_SEARCH_TIME_REG.test(opts.since)) {
     logger.error(`since 的格式应该为 YYYY-MM-DD(${opts.since})`)
-    process.exit(0)
+    process.exit(1)
   }
   if (opts.until && !GET_ACTIVITY_SEARCH_TIME_REG.test(opts.until)) {
     logger.error(`until 的格式应该为 YYYY-MM-DD(${opts.until})`)
-    process.exit(0)
+    process.exit(1)
   }
   const sinceDate = opts.since ? day(opts.since) : null
   const untilDate = opts.until ? day(opts.until) : null
