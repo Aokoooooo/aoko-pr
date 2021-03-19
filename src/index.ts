@@ -2,11 +2,11 @@ import commander from 'commander'
 import pkg from '../package.json'
 import {
   authPrompt,
+  checkPrompt,
   configPrompt,
   createPRPrompt,
   deleteBranchPrompt,
   getRecentPRPrompt,
-  checkPrompt,
   updatePRPrompt,
 } from './promotes'
 

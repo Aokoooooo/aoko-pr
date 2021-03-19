@@ -78,7 +78,7 @@ export function getAuthHistory(config: IConfigFile, isChoices?: boolean) {
     : history
 }
 
-export const escapeHtml = (html: string = '') => {
+export const escapeHtml = (html = '') => {
   const match = /["'&<>]/.exec(html)
 
   if (!match) {
@@ -92,23 +92,28 @@ export const escapeHtml = (html: string = '') => {
 
   for (index = match.index; index < html.length; index++) {
     switch (html.charCodeAt(index)) {
-      case 34: // "
-        escape = '&quot;'
-        break
-      case 38: // &
-        escape = '&amp;'
-        break
-      case 39: // '
-        escape = '&#39;'
-        break
-      case 60: // <
-        escape = '&lt;'
-        break
-      case 62: // >
-        escape = '&gt;'
-        break
-      default:
-        continue
+    // eslint-disable-next-line no-magic-numbers
+    case 34: // "
+      escape = '&quot;'
+      break
+    // eslint-disable-next-line no-magic-numbers
+    case 38: // &
+      escape = '&amp;'
+      break
+    // eslint-disable-next-line no-magic-numbers
+    case 39: // '
+      escape = '&#39;'
+      break
+    case 60: // <
+      escape = '&lt;'
+      break
+    // eslint-disable-next-line no-magic-numbers
+    case 62: // >
+      escape = '&gt;'
+      break
+    default:
+      // eslint-disable-next-line no-continue
+      continue
     }
 
     if (lastIndex !== index) {

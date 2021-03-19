@@ -1,6 +1,6 @@
 import day from 'dayjs'
 import inquirer from 'inquirer'
-import { encode, decode } from 'js-base64'
+import { decode, encode } from 'js-base64'
 import { authByToken } from './github-client'
 import { logger } from './logger'
 import { ITableRowData, ITableRowDataMap, parseTemplate } from './template'
@@ -244,7 +244,10 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
   logger.success(`分支 "${name}" 删除成功`)
 }
 
-const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt>>, version: string) => {
+const updateVersionPrompt = async (
+  pr: TArrayType<TReturnType<typeof getPRPrompt>>,
+  version: string
+) => {
   const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'
   if (!reg.test(version)) {
@@ -260,14 +263,15 @@ const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt
     path: filename,
     ref: pr.head.ref,
   })
-  let pkg = { version: ''}
+  let pkg = { version: '' }
   try {
     pkg = JSON.parse(decode((oldFile.data as any)?.content))
   } catch (_) {
     logger.error(`解析历史 version 失败，请确认 ${filename} 存在并且内容为合法 JSON`)
     return false
   }
-  if (pkg.version === version) {
+  const oldVersion = pkg.version
+  if (oldVersion === version) {
     logger.warn(`version 并未发生变化，请确认你想更新的 version（${version}）`)
     return false
   }
@@ -277,7 +281,7 @@ const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt
     owner,
     repo: REPO_NAME,
     path: filename,
-    message: `version: ${version}`,
+    message: `version: ${oldVersion} => ${version}`,
     content: encode(formatToJSONString(pkg)),
     branch: pr.head.ref,
     sha: (oldFile.data as any).sha,
@@ -368,7 +372,10 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   })
   const titleMatch = /^(.*)([\(（].*[\)）])$/.exec(pr.title)
   const titleSuffix = opts.version && versionChanged ? `（${opts.version}）` : ''
-  const newTitle = titleMatch?.[1] && versionChanged ? `${titleMatch[1]}${titleSuffix}` : `${pr.title}${titleSuffix}`
+  const newTitle
+    = titleMatch?.[1] && versionChanged
+      ? `${titleMatch[1]}${titleSuffix}`
+      : `${pr.title}${titleSuffix}`
   await client.pulls.update({
     owner,
     repo,
