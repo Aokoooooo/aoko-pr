@@ -35,6 +35,7 @@ commander
   .description('更新上线 PR')
   .option('-i, --id <id>', 'PR ID')
   .option('-t, --title <title>', 'PR title')
+  // eslint-disable-next-line no-useless-escape
   .option('-v, --version <version>', '/^(\d+\.)*\d$/')
   .action(updatePRPrompt)
 

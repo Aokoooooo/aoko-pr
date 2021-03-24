@@ -370,6 +370,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
       baseBodyDataMap[name].push(baseBodyData)
     })
   })
+  // eslint-disable-next-line no-useless-escape
   const titleMatch = /^(.*)([\(（].*[\)）])$/.exec(pr.title)
   const titleSuffix = opts.version && versionChanged ? `（${opts.version}）` : ''
   const newTitle
@@ -613,7 +614,7 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
       data
         .filter(
           (v) => v.user?.login === (config.username || '')
-            && (untilDate ? !untilDate.isAfter(day(v.created_at)) : true)
+            && (untilDate ? !day(v.created_at).isAfter(untilDate) : true)
             && (sinceDate ? !sinceDate.isAfter(day(v.created_at)) : true)
         )
         .forEach((v) => {
