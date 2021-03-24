@@ -613,8 +613,8 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
       data
         .filter(
           (v) => v.user?.login === (config.username || '')
-            && (untilDate ? !untilDate.isAfter(v.created_at as string) : true)
-            && (sinceDate ? !sinceDate.isBefore(v.created_at as string) : true)
+            && (untilDate ? !untilDate.isAfter(day(v.created_at)) : true)
+            && (sinceDate ? !sinceDate.isAfter(day(v.created_at)) : true)
         )
         .forEach((v) => {
           const item = {
