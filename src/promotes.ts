@@ -505,6 +505,7 @@ interface ICreatePRPromptOpts {
   name: string
   branch?: string
   ls?: boolean
+  version?: string
 }
 
 export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
@@ -539,7 +540,7 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
     base: 'stable',
   })
   logger.success(`上线 PR "${opts.name}" 创建成功`)
-  updatePRPrompt({ id: createPR.data.number })
+  updatePRPrompt({ id: createPR.data.number, version: opts.version })
 }
 
 interface IGetRecentPRPromptOpts {
@@ -648,9 +649,9 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
     Object.keys(result).forEach((firstKey) => {
       md += `- ${firstKey}\n`
       Object.keys(result[firstKey]).forEach((secondKey) => {
-        md += `  - ${secondKey}\n`
+        md += `    - ${secondKey}\n`
         result[firstKey][secondKey].forEach((v) => {
-          md += `    - [${v.title}${
+          md += `        - [${v.title}${
             (opts.date && v.create && day(v.create).format('YYYY-MM-DD')) || ''
           }](${v.url})\n`
         })

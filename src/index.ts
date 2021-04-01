@@ -27,6 +27,8 @@ commander
   .option('-n, --name <name>', 'PR 的名字', 'frontend: 将 master 最新提交合并至 stable 分支')
   .option('-b, --branch [branch]', '分支的名字')
   .option('-l, --ls', '选择某个分支来创建 PR')
+  // eslint-disable-next-line no-useless-escape
+  .option('-v, --version <version>', '/^(\d+\.)*\d$/')
   .action(createPRPrompt)
 
 commander
