@@ -282,7 +282,7 @@ const updateVersionPrompt = async (
     repo: REPO_NAME,
     path: filename,
     message: `version: ${oldVersion} => ${version}`,
-    content: encode(formatToJSONString(pkg)),
+    content: encode(`${formatToJSONString(pkg)}\n`),
     branch: pr.head.ref,
     sha: (oldFile.data as any).sha,
   })
