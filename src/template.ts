@@ -254,7 +254,7 @@ export const parseTemplate = async (
       const oldDataList = oldData[name]
       oldDataList.forEach((v) => {
         for (let i = 0; i < list.length; i++) {
-          if (list[i].title === v.title) {
+          if (escapeHtml(list[i].title) === v.title) {
             list[i] = { ...list[i], ...v, name: list[i].name }
           }
         }
