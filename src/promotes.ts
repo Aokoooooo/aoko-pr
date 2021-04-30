@@ -372,7 +372,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   })
   // eslint-disable-next-line no-useless-escape
   const titleMatch = /^(.*)([\(（].*[\)）])$/.exec(pr.title)
-  const titleSuffix = opts.version && versionChanged ? `（${opts.version}）` : ''
+  const titleSuffix = opts.version && versionChanged ? `(${opts.version})` : ''
   const newTitle
     = titleMatch?.[1] && versionChanged
       ? `${titleMatch[1]}${titleSuffix}`
