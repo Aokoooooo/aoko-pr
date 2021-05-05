@@ -65,6 +65,7 @@ commander
   .description('查看最近创建的 PR')
   .option('-s, --since <since>', '查询的起点时间（YYYY-MM-DD）')
   .option('-u, --until <until>', '查询的结束时间（YYYY-MM-DD）')
+  .option('-t, --type [type]', '搜索的排序类型，created, updated', 'created')
   .option('-f, --format', '格式化为 md')
   .option('-d, --date', 'format 时数据结果包含时间（默认只有标题）')
   .option('-r, --reverse', '按照【是否完成】来聚合（默认按照【仓库】聚合）')

@@ -12,8 +12,9 @@ import {
   formatToJSONString,
   getAuthHistory,
   getConfigFile,
+  getConfigFilePath,
+  mergeConfigFile,
   writeConfigFile,
-  writeFiledOfConfigFile,
 } from './utils'
 
 const getBooleanPrompt = async (msg: string) => {
@@ -37,12 +38,13 @@ export const configPrompt = (opts: IConfigPromptOpts) => {
     writeConfigFile(INIT_CONFIG)
     logger.success('初始化配置信息成功')
   }
+  logger.info(`配置文件路径为：\n${getConfigFilePath()}`)
   const config = getConfigFile()
   if (opts.get) {
     logger.log(config[opts.get])
   } else if (opts.set) {
     const [name, value] = opts.set.split('=')
-    writeFiledOfConfigFile({ [name]: value })
+    mergeConfigFile({ [name]: value })
   } else if (opts.list) {
     logger.log(Object.keys(config).join('\n'))
   } else {
@@ -75,8 +77,8 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
     const newHistory = getAuthHistory(config)
       .filter((v) => !(choices as string[]).some((c) => v.includes(c)))
       .join(',')
-    writeFiledOfConfigFile({ tokenHistory: newHistory })
-    process.exit(1)
+    mergeConfigFile({ tokenHistory: newHistory })
+    process.exit(0)
   }
   if (opts?.ls) {
     const history = getAuthHistory(config, true)
@@ -545,6 +547,7 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
 
 interface IGetRecentPRPromptOpts {
   since?: string
+  type: 'created' | 'updated'
   until?: string
   date?: boolean
   format?: boolean
@@ -569,7 +572,6 @@ interface IRecentPRMap {
 
 const ACTIVITY_REPO = [
   'audio-chatroom',
-  'devops',
   'mimi-web',
   'missevan-mobile',
   'missevan-standalone',
@@ -577,6 +579,8 @@ const ACTIVITY_REPO = [
   'requirements-doc',
   'web-utils',
 ]
+
+const getDateBySortType = (type: IGetRecentPRPromptOpts['type'], data: any) => (type === 'created' ? data.created_at : data.updated_at)
 
 export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
   const { config, client } = await getBaseData()
@@ -607,16 +611,21 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
         repo,
         state: 'all',
         page: page++,
+        sort: opts.type,
+        direction: 'desc',
       })
       const lastData = data[data.length - 1]
-      if (!lastData || (sinceDate && sinceDate.isAfter(day(lastData.created_at as string)))) {
+      if (
+        !lastData
+        || (sinceDate && sinceDate.isAfter(day(getDateBySortType(opts.type, lastData) as string)))
+      ) {
         notEnd = false
       }
       data
         .filter(
           (v) => v.user?.login === (config.username || '')
-            && (untilDate ? !day(v.created_at).isAfter(untilDate) : true)
-            && (sinceDate ? !sinceDate.isAfter(day(v.created_at)) : true)
+            && (untilDate ? !day(getDateBySortType(opts.type, v)).isAfter(untilDate) : true)
+            && (sinceDate ? !sinceDate.isAfter(day(getDateBySortType(opts.type, v))) : true)
         )
         .forEach((v) => {
           const item = {

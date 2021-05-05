@@ -19,7 +19,7 @@ export const INIT_CONFIG: IConfigFile = {
 export let REPO_NAME = 'audio-chatroom'
 export let UPSTREAM_OWNER = 'MiaoSiLa'
 
-const getConfigFilePath = () => path.join(os.homedir(), CONFIG_FILE_NAME)
+export const getConfigFilePath = () => path.join(os.homedir(), CONFIG_FILE_NAME)
 
 export const formatToJSONString = (data: any) => JSON.stringify(data, undefined, 2)
 
@@ -55,7 +55,7 @@ export const getConfigFile = () => {
   }
 }
 
-export const writeFiledOfConfigFile = (data: IConfigFile = {}) => {
+export const mergeConfigFile = (data: IConfigFile = {}) => {
   const config = getConfigFile()
   writeConfigFile({ ...config, ...data })
 }
