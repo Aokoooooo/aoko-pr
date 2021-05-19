@@ -327,7 +327,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     if (!groupedCommits[login]) {
       groupedCommits[login] = []
     }
-    groupedCommits[login].push(v.commit.message)
+    groupedCommits[login].push(v.commit.message.split(/[\r\n]+/)[0])
   })
   const commitUsers = Object.keys(groupedCommits)
   const oldReviewers = (pr.requested_reviewers || [])
@@ -372,9 +372,8 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
       baseBodyDataMap[name].push(baseBodyData)
     })
   })
-  // eslint-disable-next-line no-useless-escape
-  const titleMatch = /^(.*)([\(（].*[\)）])$/.exec(pr.title)
-  const titleSuffix = opts.version && versionChanged ? `(${opts.version})` : ''
+  const titleMatch = /^(.*)(\s\().*(\))$/.exec(pr.title)
+  const titleSuffix = opts.version && versionChanged ? ` (v${opts.version})` : ''
   const newTitle
     = titleMatch?.[1] && versionChanged
       ? `${titleMatch[1]}${titleSuffix}`
