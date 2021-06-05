@@ -45,7 +45,9 @@ export const configPrompt = (opts: IConfigPromptOpts) => {
     logger.log(config[opts.get])
   } else if (opts.set) {
     const [name, value] = opts.set.split('=')
-    mergeConfigFile({ [name]: value })
+    // eslint-disable-next-line no-nested-ternary
+    const parsedValue = value === 'true' ? true : value === 'false' ? false : value
+    mergeConfigFile({ [name]: parsedValue })
   } else if (opts.list) {
     logger.log(Object.keys(config).join('\n'))
   } else {
