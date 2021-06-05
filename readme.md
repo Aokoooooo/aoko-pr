@@ -18,3 +18,8 @@ a cli for creating & updateing PRs to the stable branch
 ## 代理
 通过 config -s proxy=xxx 来配置代理
 支持 http, https, socks, socks5, socks4, pac 协议
+
+## 使用本地 git CLI
+通过 config -s useGitCLI=true
+将能放到本地的操作（比如 fetch, rebase）交由 git cli 去执行
+需要提前切换到项目对应的目录下

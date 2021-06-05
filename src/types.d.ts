@@ -8,6 +8,7 @@ export interface IConfigFile {
   debug?: boolean
   debugRepo?: string
   debugUpstreamOwner?: string
+  useGitCLI?: boolean
 }
 
 export type TPromiseType<P> = P extends Promise<infer U> ? U : P

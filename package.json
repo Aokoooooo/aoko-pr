@@ -1,6 +1,6 @@
 {
   "name": "aoko-pr",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "a cli for creating & updateing PRs to the stable branch",
   "author": "Aoko",
   "homepage": "https://github.com/Aokoooooo/aoko-pr",
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@types/inquirer": "^7.3.1",
     "@types/jsdom": "^16.2.7",
+    "@types/shelljs": "^0.8.8",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "cross-env": "^7.0.3",
@@ -42,6 +43,7 @@
     "inquirer": "^7.3.3",
     "js-base64": "^3.6.0",
     "jsdom": "^16.5.0",
-    "proxy-agent": "^4.0.1"
+    "proxy-agent": "^4.0.1",
+    "shelljs": "^0.8.4"
   }
 }

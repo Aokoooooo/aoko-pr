@@ -14,6 +14,7 @@ export const INIT_CONFIG: IConfigFile = {
   debug: false,
   debugRepo: '',
   debugUpstreamOwner: '',
+  useGitCLI: false,
 }
 
 export let REPO_NAME = 'audio-chatroom'

@@ -1,6 +1,7 @@
 import day from 'dayjs'
 import inquirer from 'inquirer'
 import { decode, encode } from 'js-base64'
+import shell, { exit } from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
 import { ITableRowData, ITableRowDataMap, parseTemplate } from './template'
@@ -109,6 +110,10 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
 const getBaseData = async () => {
   const config = getConfigFile()
   const client = await authPrompt()
+  if (config.useGitCLI && !shell.which('git')) {
+    logger.error('需要先安装 git。')
+    exit(1)
+  }
   return { config, client }
 }
 
@@ -297,24 +302,34 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   const owner = UPSTREAM_OWNER
   const repo = REPO_NAME
   logger.log(`正在为 “PR${Number(opts.id) ? `#${opts.id}` : ''}” 同步最新的改动。。。`)
-  let pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
-  const master = await getUpstreamMasterPromopt()
-  logger.log('同步提交中。。。')
-  const newBranchName = `${
-    pr.head.label.split(':')?.[1] || `PR#${pr.number}`
-  }-temp-sync-branch-${Math.random().toString(16).substr(2)}`
-  const newBranch = await createRefPrompt(master.object.sha, newBranchName)
-  logger.log('合并分支中。。。')
-  await client.repos.merge({
-    owner: config.username || '',
-    repo,
-    base: pr.head.ref,
-    head: newBranch.object.sha,
-    commit_message: 'auto sync upstream master commits',
-  })
-  logger.success('合并分支成功')
-  await deleteBranchPrompt({ name: newBranchName })
-  pr = await getPRPrompt(pr.number)
+  let pr: TReturnType<typeof selectPRPrompt>
+  if (config.useGitCLI) {
+    pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
+    shell.exec(`git checkout -f -B ${pr.head.ref}`, { cwd: process.cwd() })
+    shell.exec('git fetch upstream', { cwd: process.cwd() })
+    shell.exec('git merge upstream/master', { cwd: process.cwd() })
+    shell.exec('git push', { cwd: process.cwd() })
+    pr = await getPRPrompt(pr.number)
+  } else {
+    pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
+    const master = await getUpstreamMasterPromopt()
+    logger.log('同步提交中。。。')
+    const newBranchName = `${
+      pr.head.label.split(':')?.[1] || `PR#${pr.number}`
+    }-temp-sync-branch-${Math.random().toString(16).substr(2)}`
+    const newBranch = await createRefPrompt(master.object.sha, newBranchName)
+    logger.log('合并分支中。。。')
+    await client.repos.merge({
+      owner: config.username || '',
+      repo,
+      base: pr.head.ref,
+      head: newBranch.object.sha,
+      commit_message: 'auto sync upstream master commits',
+    })
+    logger.success('合并分支成功')
+    await deleteBranchPrompt({ name: newBranchName })
+    pr = await getPRPrompt(pr.number)
+  }
   logger.success('提交同步成功')
   let versionChanged = false
   if (opts.version) {
@@ -515,8 +530,14 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
   const owner = config.username || ''
   let branchName = opts.branch || `PR-${day().format('YYYY-MM-DD')}`
   if (!opts.branch && !opts.ls) {
-    const masterRef = await getUpstreamMasterPromopt()
-    await createRefPrompt(masterRef.object.sha, branchName)
+    if (config.useGitCLI) {
+      shell.exec('git fetch upstream', { cwd: process.cwd() })
+      shell.exec(`git checkout -f -B ${branchName} upstream/master`, { cwd: process.cwd() })
+      shell.exec(`git push -u origin ${branchName}`, { cwd: process.cwd() })
+    } else {
+      const masterRef = await getUpstreamMasterPromopt()
+      await createRefPrompt(masterRef.object.sha, branchName)
+    }
   } else {
     if (opts.ls) {
       branchName = await searchBranchPrompt()

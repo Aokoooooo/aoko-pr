@@ -194,7 +194,7 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
   }
   for (let i = 0; i < targetCommits.length; i++) {
     const titleDOM = targetCommits[i].getElementsByClassName(ETableRowType.Title)?.[0]
-    if (titleDOM && titleDOM.innerHTML.trim() === escapeHtml(data.title)) {
+    if (titleDOM && escapeHtml(titleDOM.innerHTML.trim()) === escapeHtml(data.title)) {
       const msgDOM = targetCommits[i].getElementsByClassName(ETableRowType.Msg)?.[0]
       if (msgDOM && data.msg) {
         msgDOM.innerHTML = data.msg
