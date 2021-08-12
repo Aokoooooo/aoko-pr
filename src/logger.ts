@@ -11,7 +11,10 @@ export enum ELoggerLevel {
 export class Logger {
   level: ELoggerLevel
 
-  constructor(level: ELoggerLevel = ELoggerLevel.INFO) {
+  noDebugMsg: boolean
+
+  constructor(noDebugMsg = false, level: ELoggerLevel = ELoggerLevel.INFO) {
+    this.noDebugMsg = noDebugMsg
     this.level = level
   }
 
@@ -48,12 +51,20 @@ export class Logger {
   }
 
   debug = (...args: any[]) => {
-    this.checkLevel(ELoggerLevel.DEBUG, () => this._log(...args))
+    this.checkLevel(ELoggerLevel.DEBUG, () => {
+      if (this.noDebugMsg) {
+        return
+      }
+      this._log(...args)
+    })
   }
 }
 
 export const logger = new Logger()
+export const clientLogger = new Logger(true)
 
 export const updateLoggerLevelByDebug = (debug?: boolean) => {
-  logger.level = debug ? ELoggerLevel.DEBUG : ELoggerLevel.INFO
+  const level = debug ? ELoggerLevel.DEBUG : ELoggerLevel.INFO
+  logger.level = level
+  clientLogger.level = level
 }

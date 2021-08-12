@@ -3,7 +3,7 @@ import { DOMWindow, JSDOM } from 'jsdom'
 import { logger } from './logger'
 import { escapeHtml } from './utils'
 
-export enum ETableRowType {
+enum ETableRowType {
   Name = 'name',
   Title = 'title',
   Uat = 'uat',
@@ -25,7 +25,11 @@ export interface ITableRowDataMap {
 }
 
 const TABLE_BODY_ID = 'PR-body-table-body'
-const CHECKED_MARK = '✔️'
+
+const renderCheckbox = (checked: boolean) => {
+  const box = `- ${checked ? '[x]' : '[ ]'} OK`
+  return `\n\n${box}\n\n`
+}
 
 interface IDataTemplateData {
   class: ETableRowType
@@ -49,14 +53,14 @@ const DATA_TEMPLATE: IDataTemplateData[] = [
   },
   {
     class: ETableRowType.Uat,
-    header: 'UAT 测试通过',
-    render: (v) => (v.uatChecked ? CHECKED_MARK : ''),
+    header: 'UAT 测试',
+    render: (v) => renderCheckbox(v.uatChecked),
     field: 'uatChecked',
   },
   {
     class: ETableRowType.Prod,
-    header: '线上测试通过',
-    render: (v) => (v.prodChecked ? CHECKED_MARK : ''),
+    header: '线上测试',
+    render: (v) => renderCheckbox(v.prodChecked),
     field: 'prodChecked',
   },
   {
@@ -97,7 +101,7 @@ const createTableHeader = (window: DOMWindow) => {
 }
 
 const formatHTML = async (html: string) => new Promise<string>((resolve, reject) => {
-  tidy(html, { 'indent': true, 'show-body-only': 'yes' }, (e, r) => {
+  tidy(html, { 'indent': 'no', 'show-body-only': 'yes' }, (e, r) => {
     if (e) {
       reject(e)
     }
@@ -108,6 +112,8 @@ const formatHTML = async (html: string) => new Promise<string>((resolve, reject)
 const formatDOMToString = async (dom: JSDOM) => {
   const result = await formatHTML(dom.serialize())
   return result
+    .replace(/(-\s\[[x\s]\]\sOK)/g, '\r\n\r\n  $1\r\n\r\n')
+    .replace(/(<\/tr>)/g, '$1\r\n\r\n')
 }
 
 const createTemplate = async (data: ITableRowDataMap, outputTableBodyDOM: boolean) => {
@@ -153,7 +159,7 @@ const parseTableRow = (dom: HTMLElement) => {
         }
         result = lastName
       } else if (BOOL_VALUE_TH.includes(v.class)) {
-        result = !!value
+        result = /- \[x\]/.test(value)
       }
       (data as any)[v.field] = result
     })
@@ -196,16 +202,16 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
     const titleDOM = targetCommits[i].getElementsByClassName(ETableRowType.Title)?.[0]
     if (titleDOM && escapeHtml(titleDOM.innerHTML.trim()) === escapeHtml(data.title)) {
       const msgDOM = targetCommits[i].getElementsByClassName(ETableRowType.Msg)?.[0]
-      if (msgDOM && data.msg) {
-        msgDOM.innerHTML = data.msg
+      if (msgDOM) {
+        msgDOM.innerHTML = data.msg || ''
       }
       const uatDOM = targetCommits[i].getElementsByClassName(ETableRowType.Uat)?.[0]
-      if (uatDOM && typeof data.uatChecked === 'boolean') {
-        uatDOM.innerHTML = data.uatChecked ? CHECKED_MARK : ''
+      if (uatDOM) {
+        uatDOM.innerHTML = renderCheckbox(data.uatChecked)
       }
       const prodDOM = targetCommits[i].getElementsByClassName(ETableRowType.Prod)?.[0]
-      if (prodDOM && typeof data.prodChecked === 'boolean') {
-        prodDOM.innerHTML = data.prodChecked ? CHECKED_MARK : ''
+      if (prodDOM) {
+        prodDOM.innerHTML = renderCheckbox(data.prodChecked)
       }
       return true
     }

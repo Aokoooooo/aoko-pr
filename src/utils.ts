@@ -35,8 +35,8 @@ export const writeConfigFile = (data?: IConfigFile) => {
 }
 
 const updateRepoAndOwnerByConfig = (config: IConfigFile) => {
-  REPO_NAME = config.debugRepo ? config.debugRepo : 'audio-chatroom'
-  UPSTREAM_OWNER = config.debugUpstreamOwner ? config.debugUpstreamOwner : 'MiaoSiLa'
+  REPO_NAME = config.debug && config.debugRepo ? config.debugRepo : 'audio-chatroom'
+  UPSTREAM_OWNER = config.debug && config.debugUpstreamOwner ? config.debugUpstreamOwner : 'MiaoSiLa'
 }
 
 export const getConfigFile = () => {
