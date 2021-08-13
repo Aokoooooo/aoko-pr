@@ -28,7 +28,7 @@ commander
   .option('-b, --branch [branch]', '分支的名字')
   .option('-l, --ls', '选择某个分支来创建 PR')
   // eslint-disable-next-line no-useless-escape
-  .option('-v, --version <version>', '/^(\d+\.)*\d$/')
+  .option('-v, --version [version]', '不传具体的值（/^(\d+\.)*\d$/），则自动加一')
   .action(createPRPrompt)
 
 commander
