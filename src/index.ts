@@ -38,7 +38,7 @@ commander
   .option('-i, --id <id>', 'PR ID')
   .option('-t, --title <title>', 'PR title')
   // eslint-disable-next-line no-useless-escape
-  .option('-v, --version <version>', '/^(\d+\.)*\d$/')
+  .option('-v, --version [version]', '不传具体的值（/^(\d+\.)*\d$/），则自动加一')
   .action(updatePRPrompt)
 
 commander

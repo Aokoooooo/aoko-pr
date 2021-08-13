@@ -179,7 +179,7 @@ const selectPRPrompt = async () => {
 interface IUpdatePRPromptOpts {
   id?: string | number
   title?: string
-  version?: string
+  version?: string | boolean
 }
 
 const getPRCommitsPrompt = async (id: number, total: number) => {
@@ -255,11 +255,12 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
 
 const updateVersionPrompt = async (
   pr: TArrayType<TReturnType<typeof getPRPrompt>>,
-  version: string
+  version: string | true
 ) => {
   const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'
-  if (!reg.test(version)) {
+  const isAutoGenerateVersion = version === true
+  if (!isAutoGenerateVersion && !reg.test(version as string)) {
     logger.error(`version 更新失败。version 必须满足 ${reg} 的格式（${version}）`)
     return false
   }
@@ -280,11 +281,23 @@ const updateVersionPrompt = async (
     return false
   }
   const oldVersion = pkg.version
+  if (isAutoGenerateVersion) {
+    const newVersionNum = parseInt(pkg.version.replace(/\./g, ''))
+    if (!newVersionNum) {
+      logger.error(`pkg.version(${pkg.version}) 无法解析为数字，请检查`)
+      return false
+    }
+    const splitedVersion = String(newVersionNum + 1).split('')
+    splitedVersion.splice(splitedVersion.length - 2, 0, '.')
+    splitedVersion.splice(splitedVersion.length - 1, 0, '.')
+    // eslint-disable-next-line no-param-reassign
+    version = splitedVersion.join('')
+  }
   if (oldVersion === version) {
     logger.warn(`version 并未发生变化，请确认你想更新的 version（${version}）`)
     return false
   }
-  pkg.version = version
+  pkg.version = version as string
   logger.log('更新 version 中。。。')
   await client.repos.createOrUpdateFileContents({
     owner,
