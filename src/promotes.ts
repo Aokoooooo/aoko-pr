@@ -415,9 +415,9 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     = titleMatch?.[1] && versionChanged
       ? `${titleMatch[1]}${titleSuffix}`
       : `${pr.title}${titleSuffix}`
-  logger.debug('old PR body:\n', JSON.stringify(pr.body))
+  logger.debug('old PR body:\n', pr.body)
   const newBody = await parseTemplate(baseBodyDataMap, pr.body)
-  logger.debug('new PR body:\n', JSON.stringify(newBody))
+  logger.debug('new PR body:\n', newBody)
   await client.pulls.update({
     owner,
     repo,
@@ -470,7 +470,13 @@ export const checkPrompt = async (opts: ICheckPromptOtps) => {
       })
     ).author
   }
-  const currentCommits = commits.filter((v) => v.author?.login === opts.author)
+  const currentCommits = commits
+    .filter((v) => v.author?.login === opts.author)
+    .map((v) => {
+      v.commit.message = v.commit.message.split(/[\r\n]+/)[0]
+      return v
+    })
+
   if (!opts.commit) {
     opts.commit = await (
       await inquirer.prompt({
@@ -529,11 +535,14 @@ export const checkPrompt = async (opts: ICheckPromptOtps) => {
       data.msg = opts.msg.trim()
     }
   }
+  logger.debug('data:\n', data)
+  const newBody = await parseTemplate(data as ITableRowData, pr.body, true)
+  logger.debug('newBody:\n', newBody)
   await client.pulls.update({
     owner,
     repo,
     pull_number: pr.number,
-    body: await parseTemplate(data as ITableRowData, pr.body, true),
+    body: newBody,
   })
   logger.success('PR body 更新成功')
   logger.success(

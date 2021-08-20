@@ -1,5 +1,5 @@
-import { tidy } from 'htmltidy2'
 import { DOMWindow, JSDOM } from 'jsdom'
+import prettier from 'prettier'
 import { logger } from './logger'
 import { escapeHtml } from './utils'
 
@@ -100,17 +100,12 @@ const createTableHeader = (window: DOMWindow) => {
   return thead
 }
 
-const formatHTML = async (html: string) => new Promise<string>((resolve, reject) => {
-  tidy(html, { 'indent': 'no', 'show-body-only': 'yes' }, (e, r) => {
-    if (e) {
-      reject(e)
-    }
-    resolve(r)
-  })
-})
-
 const formatDOMToString = async (dom: JSDOM) => {
-  const result = await formatHTML(dom.serialize())
+  const result = prettier.format(dom.serialize(), {
+    parser: 'html',
+    printWidth: Number.MAX_SAFE_INTEGER,
+    tabWidth: 0,
+  })
   return result
     .replace(/(-\s\[[x\s]\]\sOK)/g, '\r\n\r\n  $1\r\n\r\n')
     .replace(/(<\/tr>)/g, '$1\r\n\r\n')
@@ -202,15 +197,15 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
     const titleDOM = targetCommits[i].getElementsByClassName(ETableRowType.Title)?.[0]
     if (titleDOM && escapeHtml(titleDOM.innerHTML.trim()) === escapeHtml(data.title)) {
       const msgDOM = targetCommits[i].getElementsByClassName(ETableRowType.Msg)?.[0]
-      if (msgDOM) {
+      if (typeof data.msg !== 'undefined' && msgDOM) {
         msgDOM.innerHTML = data.msg || ''
       }
       const uatDOM = targetCommits[i].getElementsByClassName(ETableRowType.Uat)?.[0]
-      if (uatDOM) {
+      if (typeof data.uatChecked !== 'undefined' && uatDOM) {
         uatDOM.innerHTML = renderCheckbox(data.uatChecked)
       }
       const prodDOM = targetCommits[i].getElementsByClassName(ETableRowType.Prod)?.[0]
-      if (prodDOM) {
+      if (typeof data.prodChecked !== 'undefined' && prodDOM) {
         prodDOM.innerHTML = renderCheckbox(data.prodChecked)
       }
       return true
