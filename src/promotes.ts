@@ -207,7 +207,7 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
   )
 }
 
-const getUpstreamMasterPromopt = async () => {
+const getUpstreamMasterPrompt = async () => {
   const { client } = await getBaseData()
   logger.log('查询上游 master 分支中。。。')
   const masterRef = await client.git.getRef({
@@ -327,7 +327,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     pr = await getPRPrompt(pr.number)
   } else {
     pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
-    const master = await getUpstreamMasterPromopt()
+    const master = await getUpstreamMasterPrompt()
     logger.log('同步提交中。。。')
     const newBranchName = `${
       pr.head.label.split(':')?.[1] || `PR#${pr.number}`
@@ -408,11 +408,14 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     = titleMatch?.[1] && versionChanged
       ? `${titleMatch[1]}${titleSuffix}`
       : `${pr.title}${titleSuffix}`
+  logger.debug('baseBodyDataMap: ', JSON.stringify(baseBodyDataMap))
+  const newBody = await parseTemplate(baseBodyDataMap, pr.body)
+  logger.debug('PR description: ', newBody)
   await client.pulls.update({
     owner,
     repo,
     pull_number: pr.number,
-    body: await parseTemplate(baseBodyDataMap, pr.body),
+    body: newBody,
     title: opts.title || newTitle,
   })
   logger.success('PR 信息更新成功')
@@ -550,7 +553,7 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
       shell.exec(`git checkout -f -B ${branchName} upstream/master`, { cwd: process.cwd() })
       shell.exec(`git push -u origin ${branchName}`, { cwd: process.cwd() })
     } else {
-      const masterRef = await getUpstreamMasterPromopt()
+      const masterRef = await getUpstreamMasterPrompt()
       await createRefPrompt(masterRef.object.sha, branchName)
     }
   } else {
