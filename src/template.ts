@@ -226,7 +226,7 @@ export const parseTemplate = async (
 ) => {
   if (!body) {
     if (isUpdateTableRow) {
-      logger.error('解析历史 PR body 失败，请确认 PR body 存在且符合解析规则')
+      logger.error('历史 PR body 为空，请确认 PR body 存在')
       process.exit(1)
     }
     return createTemplate(data as ITableRowDataMap, false)
@@ -250,6 +250,7 @@ export const parseTemplate = async (
     return formatDOMToString(DOM)
   }
   const oldData = parseTableRow(tableBody)
+  logger.debug('oldData:\n', oldData)
   if (oldData) {
     Object.keys(oldData).forEach((name) => {
       // 去除 @
@@ -260,13 +261,17 @@ export const parseTemplate = async (
       const oldDataList = oldData[name]
       oldDataList.forEach((v) => {
         for (let i = 0; i < list.length; i++) {
-          if (escapeHtml(list[i].title) === v.title) {
+          const reg = /\(#\d+\)$/
+          const id1 = reg.exec(list[i].title)?.[0]
+          const id2 = reg.exec(v.title)?.[0]
+          if (id1 && id1 === id2) {
             list[i] = { ...list[i], ...v, name: list[i].name }
           }
         }
       })
     })
   }
+  logger.debug('newData:\n', data)
   const table = await createTemplate(data as ITableRowDataMap, true)
   tableBody.outerHTML = table
   return formatDOMToString(DOM)

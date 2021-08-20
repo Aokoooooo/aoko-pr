@@ -1,7 +1,7 @@
 import day from 'dayjs'
 import inquirer from 'inquirer'
 import { decode, encode } from 'js-base64'
-import shell, { exit } from 'shelljs'
+import shell from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
 import { ITableRowData, ITableRowDataMap, parseTemplate } from './template'
@@ -114,7 +114,7 @@ const getBaseData = async () => {
   const client = await authPrompt()
   if (config.useGitCLI && !shell.which('git')) {
     logger.error('需要先安装 git。')
-    exit(1)
+    process.exit(1)
   }
   return { config, client }
 }
@@ -314,6 +314,13 @@ const updateVersionPrompt = async (
 
 export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   const { config, client } = await getBaseData()
+  if (!config.useGitCLI) {
+    const stillUseAPI = await getBooleanPrompt('你确认继续使用 API 来同步 PR 吗，可能会导致追加无用 commit')
+    if (!stillUseAPI) {
+      logger.log('请通过以下命令开启 git CLI 模式：aoko-pr config -s useGitCLI=true')
+      process.exit(0)
+    }
+  }
   const owner = UPSTREAM_OWNER
   const repo = REPO_NAME
   logger.log(`正在为 “PR${Number(opts.id) ? `#${opts.id}` : ''}” 同步最新的改动。。。`)
@@ -323,7 +330,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     shell.exec(`git checkout -f -B ${pr.head.ref}`, { cwd: process.cwd() })
     shell.exec('git fetch upstream', { cwd: process.cwd() })
     shell.exec('git merge upstream/master', { cwd: process.cwd() })
-    shell.exec('git push', { cwd: process.cwd() })
+    shell.exec(`git push --set-upstream origin ${pr.head.ref}`, { cwd: process.cwd() })
     pr = await getPRPrompt(pr.number)
   } else {
     pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
@@ -408,9 +415,9 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     = titleMatch?.[1] && versionChanged
       ? `${titleMatch[1]}${titleSuffix}`
       : `${pr.title}${titleSuffix}`
-  logger.debug('baseBodyDataMap: ', JSON.stringify(baseBodyDataMap))
+  logger.debug('old PR body:\n', JSON.stringify(pr.body))
   const newBody = await parseTemplate(baseBodyDataMap, pr.body)
-  logger.debug('PR description: ', newBody)
+  logger.debug('new PR body:\n', JSON.stringify(newBody))
   await client.pulls.update({
     owner,
     repo,

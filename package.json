@@ -1,6 +1,6 @@
 {
   "name": "aoko-pr",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "a cli for creating & updateing PRs to the stable branch",
   "author": "Aoko",
   "homepage": "https://github.com/Aokoooooo/aoko-pr",
