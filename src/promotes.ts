@@ -255,8 +255,9 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
 
 const updateVersionPrompt = async (
   pr: TArrayType<TReturnType<typeof getPRPrompt>>,
-  version: string | true
+  opts: IUpdatePRPromptOpts
 ) => {
+  let version = opts.version
   const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'
   const isAutoGenerateVersion = version === true
@@ -308,6 +309,7 @@ const updateVersionPrompt = async (
     branch: pr.head.ref,
     sha: (oldFile.data as any).sha,
   })
+  opts.version = version
   logger.success(`version 更新成功，当前 version: ${version}`)
   return true
 }
@@ -355,7 +357,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   logger.success('提交同步成功')
   let versionChanged = false
   if (opts.version) {
-    versionChanged = await updateVersionPrompt(pr, opts.version)
+    versionChanged = await updateVersionPrompt(pr, opts)
   }
   const commits = await getPRCommitsPrompt(pr.number, pr.commits)
   const groupedCommits: { [login: string]: string[] } = {}
