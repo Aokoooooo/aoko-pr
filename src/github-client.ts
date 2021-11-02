@@ -24,6 +24,9 @@ export const updateClientByToken = async (token: string) => {
   })
   client.hook.error('request', (e) => {
     clientLogger.error(`client err(${(e as any).status || 0}): ${e.message}`)
+    if ((e as any).response?.url?.endsWith('/requested_reviewers')) {
+      return
+    }
     process.exit(1)
   })
   return client
