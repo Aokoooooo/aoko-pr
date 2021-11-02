@@ -386,13 +386,18 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     .filter((v) => v !== pr?.user?.login)
   if (diffReviewers.length) {
     logger.log('同步 reviewer 中。。。')
-    await client.pulls.requestReviewers({
-      owner,
-      repo,
-      pull_number: pr.number,
-      reviewers: diffReviewers,
-    })
-    logger.success('reviewer 同步成功')
+    try {
+      await client.pulls.requestReviewers({
+        owner,
+        repo,
+        pull_number: pr.number,
+        reviewers: diffReviewers,
+      })
+      logger.success('reviewer 同步成功')
+    } catch (e) {
+      logger.error('reviewer 同步失败')
+      logger.error(e)
+    }
   }
   logger.log('更新 PR 信息中。。。')
   const baseBodyDataMap: ITableRowDataMap = {}

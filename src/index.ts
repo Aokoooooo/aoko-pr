@@ -18,7 +18,7 @@ commander
   .option('-t, --token <token>', 'personal access token')
   .option('-l, --ls', '选择历史认证成功过的 token 认证')
   .option('--rm', '清除某条认证历史')
-  .action((opts) => authPrompt(opts, true))
+  .action((opts) => authPrompt(opts, true) as any)
 
 commander
   .command('create')
