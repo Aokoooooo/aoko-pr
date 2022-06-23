@@ -1,9 +1,9 @@
-import { DOMWindow, JSDOM } from 'jsdom'
-import prettier from 'prettier'
+import { JSDOM } from 'jsdom'
 import { logger } from '../logger'
 import { escapeHtml } from '../utils'
+import { createElement, createTableHeader, createTableRow, formatDOMToString, renderCheckbox, TableConfigItem } from './utils'
 
-enum ETableRowType {
+enum ETableDataItemType {
   Name = 'name',
   Title = 'title',
   Uat = 'uat',
@@ -11,7 +11,7 @@ enum ETableRowType {
   Msg = 'msg',
 }
 
-export interface ITableRowData {
+export interface TableDataItem {
   name: string
   title: string
   uatChecked: boolean
@@ -20,103 +20,56 @@ export interface ITableRowData {
   showName: boolean
 }
 
-export interface ITableRowDataMap {
-  [name: string]: ITableRowData[]
+export interface TableDataMap {
+  [name: string]: TableDataItem[]
 }
 
-const TABLE_BODY_ID = 'PR-body-table-body'
+const PR_TABLE_BODY_ID = 'PR-table-body'
+const COMPATIBILITY_TABPE_BODY_ID = 'compatibility-table-body'
 
-const renderCheckbox = (checked: boolean) => {
-  const box = `- ${checked ? '[x]' : '[ ]'} OK`
-  return `\n\n${box}\n\n`
-}
-
-interface IDataTemplateData {
-  class: ETableRowType
-  header: string
-  render: (data: ITableRowData) => string
-  field: keyof ITableRowData
-}
-
-const DATA_TEMPLATE: IDataTemplateData[] = [
+const PR_TABLE_CONFIGS: TableConfigItem<TableDataItem>[] = [
   {
-    class: ETableRowType.Name,
+    class: ETableDataItemType.Name,
     header: 'author',
     render: (v) => (v.showName ? `@${v.name}` : ''),
     field: 'name',
   },
   {
-    class: ETableRowType.Title,
+    class: ETableDataItemType.Title,
     header: '更新内容',
     render: (v) => v.title,
     field: 'title',
   },
   {
-    class: ETableRowType.Uat,
+    class: ETableDataItemType.Uat,
     header: 'UAT 测试',
     render: (v) => renderCheckbox(v.uatChecked),
     field: 'uatChecked',
   },
   {
-    class: ETableRowType.Prod,
+    class: ETableDataItemType.Prod,
     header: '线上测试',
     render: (v) => renderCheckbox(v.prodChecked),
     field: 'prodChecked',
   },
   {
-    class: ETableRowType.Msg,
+    class: ETableDataItemType.Msg,
     header: '备注',
     render: (v) => v.msg || '',
     field: 'msg',
   },
 ]
 
-// eslint-disable-next-line max-len
-const createElement = (window: DOMWindow, name: keyof HTMLElementTagNameMap) => window.document.createElement(name)
 
-const createTableRow = (window: DOMWindow, data: ITableRowData) => {
-  const tr = createElement(window, 'tr')
 
-  DATA_TEMPLATE.forEach((v) => {
-    const dom = createElement(window, 'td')
-    dom.className = v.class
-    dom.innerHTML = v.render(data)
-    tr.appendChild(dom)
-  })
-
-  return tr
-}
-
-const createTableHeader = (window: DOMWindow) => {
-  const thead = createElement(window, 'thead')
-
-  DATA_TEMPLATE.forEach((v) => {
-    const dom = createElement(window, 'th')
-    dom.className = v.class
-    dom.innerHTML = v.header
-    thead.appendChild(dom)
-  })
-
-  return thead
-}
-
-const formatDOMToString = async (dom: JSDOM) => {
-  const result = prettier.format(dom.serialize(), {
-    parser: 'html',
-    printWidth: Number.MAX_SAFE_INTEGER,
-    tabWidth: 0,
-  })
-  return result.replace(/(-\s\[[x\s]\]\sOK)/g, '\r\n\r\n  $1\r\n\r\n').replace(/(<\/tr>)/g, '$1\r\n\r\n')
-}
-
-const createTemplate = async (data: ITableRowDataMap, outputTableBodyDOM: boolean) => {
+const createTemplate = async (data: TableDataMap, outputTableBodyDOM: boolean) => {
   const DOM = new JSDOM()
   const table = createElement(DOM.window, 'table')
-  table.appendChild(createTableHeader(DOM.window))
+  table.appendChild(createTableHeader(DOM.window, PR_TABLE_CONFIGS))
   const tableBody = createElement(DOM.window, 'tbody')
-  tableBody.id = TABLE_BODY_ID
+  tableBody.id = PR_TABLE_BODY_ID
   // eslint-disable-next-line max-len
-  Object.values(data).forEach((list) => list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, v))))
+  Object.values(data).forEach((list) => list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, PR_TABLE_CONFIGS, v))))
   if (outputTableBodyDOM) {
     return tableBody.outerHTML
   }
@@ -126,10 +79,10 @@ const createTemplate = async (data: ITableRowDataMap, outputTableBodyDOM: boolea
   return result
 }
 
-const BOOL_VALUE_TH = [ETableRowType.Uat, ETableRowType.Prod]
+const BOOL_VALUE_TH = [ETableDataItemType.Uat, ETableDataItemType.Prod]
 
 const parseTableRow = (dom: HTMLElement) => {
-  const map: { [name: string]: ITableRowData[] } = {}
+  const map: { [name: string]: TableDataItem[] } = {}
   const rows = dom.getElementsByTagName('tr')
   if (!rows.length) {
     return null
@@ -141,30 +94,30 @@ const parseTableRow = (dom: HTMLElement) => {
       // eslint-disable-next-line no-continue
       continue
     }
-    const data: Partial<ITableRowData> = {}
+    const data: Partial<TableDataItem> = {}
     // eslint-disable-next-line no-loop-func
-    DATA_TEMPLATE.forEach((v) => {
+    PR_TABLE_CONFIGS.forEach((v) => {
       const value = row.getElementsByClassName(v.class)?.[0]?.innerHTML?.trim?.() ?? ''
       let result: string | boolean = value
-      if (v.class === ETableRowType.Name) {
+      if (v.class === ETableDataItemType.Name) {
         if (value) {
           lastName = value
         }
         result = lastName
-      } else if (BOOL_VALUE_TH.includes(v.class)) {
+      } else if (BOOL_VALUE_TH.includes(v.class as ETableDataItemType)) {
         result = /- \[x\]/.test(value)
       }
       ;(data as any)[v.field] = result
     })
-    if (!map[(data as ITableRowData).name]) {
-      map[(data as ITableRowData).name] = []
+    if (!map[(data as TableDataItem).name]) {
+      map[(data as TableDataItem).name] = []
     }
-    map[(data as ITableRowData).name].push(data as ITableRowData)
+    map[(data as TableDataItem).name].push(data as TableDataItem)
   }
   return map
 }
 
-const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
+const updatePRDesc = (dom: HTMLElement, data: TableDataItem) => {
   const rows = dom.getElementsByTagName('tr')
   if (!rows.length) {
     return false
@@ -177,7 +130,7 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
       // eslint-disable-next-line no-continue
       continue
     }
-    const currentName = row.getElementsByClassName(ETableRowType.Name)?.[0]?.innerHTML?.trim?.() ?? ''
+    const currentName = row.getElementsByClassName(ETableDataItemType.Name)?.[0]?.innerHTML?.trim?.() ?? ''
     if (currentName) {
       lastName = currentName
     }
@@ -191,17 +144,17 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
     return false
   }
   for (let i = 0; i < targetCommits.length; i++) {
-    const titleDOM = targetCommits[i].getElementsByClassName(ETableRowType.Title)?.[0]
+    const titleDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Title)?.[0]
     if (titleDOM && escapeHtml(titleDOM.innerHTML.trim()) === escapeHtml(data.title)) {
-      const msgDOM = targetCommits[i].getElementsByClassName(ETableRowType.Msg)?.[0]
+      const msgDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Msg)?.[0]
       if (typeof data.msg !== 'undefined' && msgDOM) {
         msgDOM.innerHTML = data.msg || ''
       }
-      const uatDOM = targetCommits[i].getElementsByClassName(ETableRowType.Uat)?.[0]
+      const uatDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Uat)?.[0]
       if (typeof data.uatChecked !== 'undefined' && uatDOM) {
         uatDOM.innerHTML = renderCheckbox(data.uatChecked)
       }
-      const prodDOM = targetCommits[i].getElementsByClassName(ETableRowType.Prod)?.[0]
+      const prodDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Prod)?.[0]
       if (typeof data.prodChecked !== 'undefined' && prodDOM) {
         prodDOM.innerHTML = renderCheckbox(data.prodChecked)
       }
@@ -212,7 +165,7 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
 }
 
 export const parseTemplate = async (
-  data: ITableRowDataMap | ITableRowData,
+  data: TableDataMap | TableDataItem,
   body: string | null,
   isUpdateTableRow?: boolean
 ) => {
@@ -221,20 +174,20 @@ export const parseTemplate = async (
       logger.error('历史 PR body 为空，请确认 PR body 存在')
       process.exit(1)
     }
-    return createTemplate(data as ITableRowDataMap, false)
+    return createTemplate(data as TableDataMap, false)
   }
   const DOM = new JSDOM(body)
   const container = DOM.window.document.body
-  const tableBody = DOM.window.document.getElementById(TABLE_BODY_ID)
+  const tableBody = DOM.window.document.getElementById(PR_TABLE_BODY_ID)
   if (!container || !tableBody) {
     if (isUpdateTableRow) {
       logger.error('解析历史 PR body 失败，请确认 PR body 存在且符合解析规则')
       process.exit(1)
     }
-    return createTemplate(data as ITableRowDataMap, false)
+    return createTemplate(data as TableDataMap, false)
   }
   if (isUpdateTableRow) {
-    const updated = updatePRDesc(tableBody, data as ITableRowData)
+    const updated = updatePRDesc(tableBody, data as TableDataItem)
     if (!updated) {
       logger.error('未找到合适的更新对象，请确认 PR body 存在且符合解析规则')
       process.exit(1)
@@ -246,7 +199,7 @@ export const parseTemplate = async (
   if (oldData) {
     Object.keys(oldData).forEach((name) => {
       // 去除 @
-      const list = (data as ITableRowDataMap)[name.substr(1)]
+      const list = (data as TableDataMap)[name.substr(1)]
       if (!list) {
         return
       }
@@ -264,7 +217,7 @@ export const parseTemplate = async (
     })
   }
   logger.debug('newData:\n', data)
-  const table = await createTemplate(data as ITableRowDataMap, true)
+  const table = await createTemplate(data as TableDataMap, true)
   tableBody.outerHTML = table
   return formatDOMToString(DOM)
 }

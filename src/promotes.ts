@@ -4,7 +4,7 @@ import { decode, encode } from 'js-base64'
 import shell from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
-import { ITableRowDataMap, parseTemplate } from './template/audio-chatroom'
+import { TableDataMap, parseTemplate } from './template/audio-chatroom'
 import { ConfigFile, ArrayItem, TReturnType } from './types'
 import {
   INIT_CONFIG,
@@ -396,7 +396,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     logger.success('reviewer 同步成功')
   }
   logger.log('更新 PR 信息中。。。')
-  const baseBodyDataMap: ITableRowDataMap = {}
+  const baseBodyDataMap: TableDataMap = {}
   Object.keys(groupedCommits).forEach((name) => {
     groupedCommits[name].forEach((title, i) => {
       const baseBodyData = {
