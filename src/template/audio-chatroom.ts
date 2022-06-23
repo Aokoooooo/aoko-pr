@@ -1,7 +1,14 @@
 import { JSDOM } from 'jsdom'
 import { logger } from '../logger'
 import { escapeHtml } from '../utils'
-import { createElement, createTableHeader, createTableRow, formatDOMToString, renderCheckbox, TableConfigItem } from './utils'
+import {
+  createElement,
+  createTableHeader,
+  createTableRow,
+  formatDOMToString,
+  renderCheckbox,
+  TableConfigItem,
+} from './utils'
 
 enum ETableDataItemType {
   Name = 'name',
@@ -60,8 +67,6 @@ const PR_TABLE_CONFIGS: TableConfigItem<TableDataItem>[] = [
   },
 ]
 
-
-
 const createTemplate = async (data: TableDataMap, outputTableBodyDOM: boolean) => {
   const DOM = new JSDOM()
   const table = createElement(DOM.window, 'table')
@@ -69,7 +74,9 @@ const createTemplate = async (data: TableDataMap, outputTableBodyDOM: boolean) =
   const tableBody = createElement(DOM.window, 'tbody')
   tableBody.id = PR_TABLE_BODY_ID
   // eslint-disable-next-line max-len
-  Object.values(data).forEach((list) => list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, PR_TABLE_CONFIGS, v))))
+  Object.values(data).forEach((list) =>
+    list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, PR_TABLE_CONFIGS, v)))
+  )
   if (outputTableBodyDOM) {
     return tableBody.outerHTML
   }
