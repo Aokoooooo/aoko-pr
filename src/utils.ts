@@ -2,11 +2,11 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { logger, updateLoggerLevelByDebug } from './logger'
-import { IConfigFile } from './types'
+import { ConfigFile } from './types'
 
 const CONFIG_FILE_NAME = '.aoko-pr.config.json'
 
-export const INIT_CONFIG: IConfigFile = {
+export const INIT_CONFIG: ConfigFile = {
   token: '',
   username: '',
   tokenHistory: '',
@@ -24,7 +24,7 @@ export const getConfigFilePath = () => path.join(os.homedir(), CONFIG_FILE_NAME)
 
 export const formatToJSONString = (data: any) => JSON.stringify(data, undefined, 2)
 
-export const writeConfigFile = (data?: IConfigFile) => {
+export const writeConfigFile = (data?: ConfigFile) => {
   try {
     fs.writeFileSync(getConfigFilePath(), formatToJSONString(data))
   } catch (e) {
@@ -34,7 +34,7 @@ export const writeConfigFile = (data?: IConfigFile) => {
   }
 }
 
-const updateRepoAndOwnerByConfig = (config: IConfigFile) => {
+const updateRepoAndOwnerByConfig = (config: ConfigFile) => {
   REPO_NAME = config.debug && config.debugRepo ? config.debugRepo : 'audio-chatroom'
   UPSTREAM_OWNER = config.debug && config.debugUpstreamOwner ? config.debugUpstreamOwner : 'MiaoSiLa'
 }
@@ -46,7 +46,7 @@ export const getConfigFile = () => {
       writeConfigFile(INIT_CONFIG)
     }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const config = require(configPath) as IConfigFile
+    const config = require(configPath) as ConfigFile
     updateLoggerLevelByDebug(config?.debug)
     updateRepoAndOwnerByConfig(config)
     return config || {}
@@ -57,14 +57,14 @@ export const getConfigFile = () => {
   }
 }
 
-export const mergeConfigFile = (data: IConfigFile = {}) => {
+export const mergeConfigFile = (data: ConfigFile = {}) => {
   const config = getConfigFile()
   writeConfigFile({ ...config, ...data })
 }
 
-export function getAuthHistory(config: IConfigFile): string[]
-export function getAuthHistory(config: IConfigFile, isChoices: boolean): Array<{ name: string; value: string }>
-export function getAuthHistory(config: IConfigFile, isChoices?: boolean) {
+export function getAuthHistory(config: ConfigFile): string[]
+export function getAuthHistory(config: ConfigFile, isChoices: boolean): Array<{ name: string; value: string }>
+export function getAuthHistory(config: ConfigFile, isChoices?: boolean) {
   const history = (config.tokenHistory || '').split(',').filter((v) => !!v)
   return isChoices
     ? history.map((v) => {

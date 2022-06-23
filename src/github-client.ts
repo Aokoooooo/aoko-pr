@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest'
 import ProxyAgent from 'proxy-agent'
 import { clientLogger, logger } from './logger'
-import { IConfigFile, TReturnType } from './types'
+import { ConfigFile, TReturnType } from './types'
 import { getAuthHistory, getConfigFile, writeConfigFile } from './utils'
 
 let client: Octokit
@@ -32,7 +32,7 @@ export const updateClientByToken = async (token: string) => {
   return client
 }
 
-const updateTokenHistory = (config: IConfigFile, token: string, username?: string) => {
+const updateTokenHistory = (config: ConfigFile, token: string, username?: string) => {
   const history = getAuthHistory(config).filter((v) => !v.includes(token))
   history.push(`${username}: ${token}`)
   config.tokenHistory = history.join(',')

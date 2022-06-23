@@ -4,8 +4,8 @@ import { decode, encode } from 'js-base64'
 import shell from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
-import { ITableRowDataMap, parseTemplate } from './template'
-import { IConfigFile, TArrayType, TReturnType } from './types'
+import { ITableRowDataMap, parseTemplate } from './template/pr'
+import { ConfigFile, ArrayItem, TReturnType } from './types'
 import {
   INIT_CONFIG,
   REPO_NAME,
@@ -28,7 +28,7 @@ const getBooleanPrompt = async (msg: string) => {
 }
 
 interface IConfigPromptOpts {
-  get?: keyof IConfigFile
+  get?: keyof ConfigFile
   set?: string
   list?: boolean
   reset?: boolean
@@ -257,7 +257,7 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
   logger.success(`分支 "${name}" 删除成功`)
 }
 
-const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt>>, opts: IUpdatePRPromptOpts) => {
+const updateVersionPrompt = async (pr: ArrayItem<TReturnType<typeof getPRPrompt>>, opts: IUpdatePRPromptOpts) => {
   let version = opts.version
   const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'

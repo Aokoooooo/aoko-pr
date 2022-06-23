@@ -1,7 +1,7 @@
 import { DOMWindow, JSDOM } from 'jsdom'
 import prettier from 'prettier'
-import { logger } from './logger'
-import { escapeHtml } from './utils'
+import { logger } from '../logger'
+import { escapeHtml } from '../utils'
 
 enum ETableRowType {
   Name = 'name',
