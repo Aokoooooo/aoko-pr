@@ -4,7 +4,7 @@ import { decode, encode } from 'js-base64'
 import shell from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
-import { ITableRowDataMap, parseTemplate } from './template/pr'
+import { ITableRowDataMap, parseTemplate } from './template/audio-chatroom'
 import { ConfigFile, ArrayItem, TReturnType } from './types'
 import {
   INIT_CONFIG,
