@@ -69,7 +69,6 @@ export function getAuthHistory(config: ConfigFile, isChoices?: boolean) {
   return isChoices
     ? history.map((v) => {
         const match = /(.*)(: )(.*)/.exec(v)
-        // eslint-disable-next-line no-nested-ternary
         const value = !match ? v : match[3] ? match[3] : match[1]
         const data = { name: v, value }
         return data
@@ -91,27 +90,22 @@ export const escapeHtml = (html = '') => {
 
   for (index = match.index; index < html.length; index++) {
     switch (html.charCodeAt(index)) {
-      // eslint-disable-next-line no-magic-numbers
       case 34: // "
         escape = '&quot;'
         break
-      // eslint-disable-next-line no-magic-numbers
       case 38: // &
         escape = '&amp;'
         break
-      // eslint-disable-next-line no-magic-numbers
       case 39: // '
         escape = '&#39;'
         break
       case 60: // <
         escape = '&lt;'
         break
-      // eslint-disable-next-line no-magic-numbers
       case 62: // >
         escape = '&gt;'
         break
       default:
-        // eslint-disable-next-line no-continue
         continue
     }
 

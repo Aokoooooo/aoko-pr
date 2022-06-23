@@ -1,13 +1,6 @@
 import commander from 'commander'
 import pkg from '../package.json'
-import {
-  authPrompt,
-  configPrompt,
-  createPRPrompt,
-  deleteBranchPrompt,
-  getRecentPRPrompt,
-  updatePRPrompt,
-} from './promotes'
+import { authPrompt, configPrompt, createPRPrompt, deleteBranchPrompt, updatePRPrompt } from './promotes'
 
 commander.version(pkg.version)
 
@@ -26,7 +19,6 @@ commander
   .option('-n, --name <name>', 'PR 的名字', 'frontend: 将 master 最新提交合并至 stable 分支')
   .option('-b, --branch [branch]', '分支的名字')
   .option('-l, --ls', '选择某个分支来创建 PR')
-  // eslint-disable-next-line no-useless-escape
   .option('-v, --version [version]', '不传具体的值（/^(d+.)*d$/），则自动加一')
   .action(createPRPrompt)
 
@@ -36,7 +28,6 @@ commander
   .description('更新上线 PR')
   .option('-i, --id <id>', 'PR ID')
   .option('-t, --title <title>', 'PR title')
-  // eslint-disable-next-line no-useless-escape
   .option('-v, --version [version]', '不传具体的值（/^(d+.)*d$/），则自动加一')
   .action(updatePRPrompt)
 
@@ -46,18 +37,6 @@ commander
   .description('删除分支')
   .option('-n, --name <name>', '分支名称')
   .action(deleteBranchPrompt)
-
-commander
-  .command('recent-pr')
-  .alias('rp')
-  .description('查看最近创建的 PR')
-  .option('-s, --since <since>', '查询的起点时间（YYYY-MM-DD）')
-  .option('-u, --until <until>', '查询的结束时间（YYYY-MM-DD）')
-  .option('-t, --type [type]', '搜索的排序类型，created, updated', 'created')
-  .option('-f, --format', '格式化为 md')
-  .option('-d, --date', 'format 时数据结果包含时间（默认只有标题）')
-  .option('-r, --reverse', '按照【是否完成】来聚合（默认按照【仓库】聚合）')
-  .action(getRecentPRPrompt)
 
 commander
   .command('config')

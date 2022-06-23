@@ -73,7 +73,6 @@ const createTemplate = async (data: TableDataMap, outputTableBodyDOM: boolean) =
   table.appendChild(createTableHeader(DOM.window, PR_TABLE_CONFIGS))
   const tableBody = createElement(DOM.window, 'tbody')
   tableBody.id = PR_TABLE_BODY_ID
-  // eslint-disable-next-line max-len
   Object.values(data).forEach((list) =>
     list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, PR_TABLE_CONFIGS, v)))
   )
@@ -98,11 +97,9 @@ const parseTableRow = (dom: HTMLElement) => {
   for (let i = 0; i < rows.length; i++) {
     const row = rows.item(i)
     if (!row) {
-      // eslint-disable-next-line no-continue
       continue
     }
     const data: Partial<TableDataItem> = {}
-    // eslint-disable-next-line no-loop-func
     PR_TABLE_CONFIGS.forEach((v) => {
       const value = row.getElementsByClassName(v.class)?.[0]?.innerHTML?.trim?.() ?? ''
       let result: string | boolean = value
@@ -134,7 +131,6 @@ const updatePRDesc = (dom: HTMLElement, data: TableDataItem) => {
   for (let i = 0; i < rows.length; i++) {
     const row = rows.item(i)
     if (!row) {
-      // eslint-disable-next-line no-continue
       continue
     }
     const currentName = row.getElementsByClassName(ETableDataItemType.Name)?.[0]?.innerHTML?.trim?.() ?? ''

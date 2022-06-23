@@ -24,9 +24,7 @@ export class Logger {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   private _log = (...args: any[]) => {
-    // eslint-disable-next-line no-console
     console.log(...args)
   }
 

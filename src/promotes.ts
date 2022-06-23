@@ -45,7 +45,6 @@ export const configPrompt = (opts: IConfigPromptOpts) => {
     logger.log(config[opts.get])
   } else if (opts.set) {
     const [name, value] = opts.set.split('=')
-    // eslint-disable-next-line no-nested-ternary
     const parsedValue = value === 'true' ? true : value === 'false' ? false : value
     mergeConfigFile({ [name]: parsedValue })
   } else if (opts.list) {
@@ -194,7 +193,6 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
   const result = []
   let page = 1
   while (total > 0) {
-    // eslint-disable-next-line no-await-in-loop
     const r = await client.pulls.listCommits({
       owner: UPSTREAM_OWNER,
       repo: REPO_NAME,
@@ -202,7 +200,6 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
       per_page: 100,
       page: page++,
     })
-    // eslint-disable-next-line no-param-reassign
     total -= 100
     result.push(...r.data)
   }
@@ -292,7 +289,6 @@ const updateVersionPrompt = async (pr: ArrayItem<TReturnType<typeof getPRPrompt>
     const splitedVersion = String(newVersionNum + 1).split('')
     splitedVersion.splice(splitedVersion.length - 2, 0, '.')
     splitedVersion.splice(splitedVersion.length - 1, 0, '.')
-    // eslint-disable-next-line no-param-reassign
     version = splitedVersion.join('')
   }
   if (oldVersion === version) {
@@ -478,126 +474,4 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
   })
   logger.success(`上线 PR "${opts.name}" 创建成功`)
   updatePRPrompt({ id: createPR.data.number, version: opts.version })
-}
-
-interface IGetRecentPRPromptOpts {
-  since?: string
-  type: 'created' | 'updated'
-  until?: string
-  date?: boolean
-  format?: boolean
-  reverse?: boolean
-}
-
-const GET_ACTIVITY_SEARCH_TIME_REG = /^[\d]{4}-[\d]{2}-[\d]{2}$/
-
-interface IRecentPR {
-  repo: string
-  status: string
-  title: string
-  create: string | null
-  url: string
-}
-
-interface IRecentPRMap {
-  [repo: string]: {
-    [status: string]: IRecentPR[]
-  }
-}
-
-const ACTIVITY_REPO = [
-  'audio-chatroom',
-  'mimi-web',
-  'missevan-mobile',
-  'missevan-standalone',
-  'missevan-web',
-  'requirements-doc',
-  'web-utils',
-]
-
-const getDateBySortType = (type: IGetRecentPRPromptOpts['type'], data: any) =>
-  type === 'created' ? data.created_at : data.updated_at
-
-export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
-  const { config, client } = await getBaseData()
-  if (opts.since && !GET_ACTIVITY_SEARCH_TIME_REG.test(opts.since)) {
-    logger.error(`since 的格式应该为 YYYY-MM-DD(${opts.since})`)
-    process.exit(1)
-  }
-  if (opts.until && !GET_ACTIVITY_SEARCH_TIME_REG.test(opts.until)) {
-    logger.error(`until 的格式应该为 YYYY-MM-DD(${opts.until})`)
-    process.exit(1)
-  }
-  const sinceDate = opts.since ? day(opts.since) : null
-  const untilDate = opts.until ? day(opts.until) : null
-  logger.log(
-    `查询最近的活动中${((opts.since || opts.until) && `(${opts.since || '--'} to ${opts.until || '--'})`) || ''}。。。`
-  )
-  const activities: IRecentPR[] = []
-  // eslint-disable-next-line no-restricted-syntax
-  for (const repo of ACTIVITY_REPO) {
-    let notEnd = !!opts.since
-    let page = 1
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      const { data } = await client.pulls.list({
-        owner: UPSTREAM_OWNER,
-        repo,
-        state: 'all',
-        page: page++,
-        sort: opts.type,
-        direction: 'desc',
-      })
-      const lastData = data[data.length - 1]
-      if (!lastData || (sinceDate && sinceDate.isAfter(day(getDateBySortType(opts.type, lastData) as string)))) {
-        notEnd = false
-      }
-      data
-        .filter(
-          (v) =>
-            v.user?.login === (config.username || '') &&
-            (untilDate ? !day(getDateBySortType(opts.type, v)).isAfter(untilDate) : true) &&
-            (sinceDate ? !sinceDate.isAfter(day(getDateBySortType(opts.type, v))) : true)
-        )
-        .forEach((v) => {
-          const item = {
-            repo,
-            status: v.state,
-            title: v.title,
-            create: v.created_at,
-            url: v.html_url,
-          }
-          activities.push(item)
-        })
-    } while (notEnd)
-  }
-  const result: IRecentPRMap = {}
-  activities.forEach((v) => {
-    const firstKey = opts.reverse ? v.status : v.repo
-    const secondKey = opts.reverse ? v.repo : v.status
-    if (!result[firstKey]) {
-      result[firstKey] = {}
-    }
-    if (!result[firstKey][secondKey]) {
-      result[firstKey][secondKey] = []
-    }
-    result[firstKey][secondKey].push(v)
-  })
-  if (!opts.format) {
-    logger.log(JSON.stringify(result))
-  } else {
-    let md = ''
-    Object.keys(result).forEach((firstKey) => {
-      md += `- ${firstKey}\n`
-      Object.keys(result[firstKey]).forEach((secondKey) => {
-        md += `    - ${secondKey}\n`
-        result[firstKey][secondKey].forEach((v) => {
-          md += `        - [${v.title}${(opts.date && v.create && day(v.create).format('YYYY-MM-DD')) || ''}](${
-            v.url
-          })\n`
-        })
-      })
-    })
-    logger.log(md)
-  }
 }
