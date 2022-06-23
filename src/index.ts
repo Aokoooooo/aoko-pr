@@ -2,7 +2,6 @@ import commander from 'commander'
 import pkg from '../package.json'
 import {
   authPrompt,
-  checkPrompt,
   configPrompt,
   createPRPrompt,
   deleteBranchPrompt,
@@ -28,7 +27,7 @@ commander
   .option('-b, --branch [branch]', '分支的名字')
   .option('-l, --ls', '选择某个分支来创建 PR')
   // eslint-disable-next-line no-useless-escape
-  .option('-v, --version [version]', '不传具体的值（/^(\d+\.)*\d$/），则自动加一')
+  .option('-v, --version [version]', '不传具体的值（/^(d+.)*d$/），则自动加一')
   .action(createPRPrompt)
 
 commander
@@ -38,19 +37,8 @@ commander
   .option('-i, --id <id>', 'PR ID')
   .option('-t, --title <title>', 'PR title')
   // eslint-disable-next-line no-useless-escape
-  .option('-v, --version [version]', '不传具体的值（/^(\d+\.)*\d$/），则自动加一')
+  .option('-v, --version [version]', '不传具体的值（/^(d+.)*d$/），则自动加一')
   .action(updatePRPrompt)
-
-commander
-  .command('check')
-  .description('更新 PR 描述 table 中的单条数据（验证测试结果或修改备注）')
-  .option('-i, --id <id>', 'PR ID')
-  .option('-a, --author <author>', 'commit author')
-  .option('-c, --commit <commit>', 'commit msg')
-  .option('-u, --uat [uat]', 'UAT check。true or false，不传代表一会儿自行选择)')
-  .option('-p, --prod [prod]', 'PROD check。true or false，不传代表一会儿自行选择')
-  .option('-m, --msg [msg]', '备注信息')
-  .action(checkPrompt)
 
 commander
   .command('delete-branch')

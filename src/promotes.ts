@@ -4,7 +4,7 @@ import { decode, encode } from 'js-base64'
 import shell from 'shelljs'
 import { authByToken } from './github-client'
 import { logger } from './logger'
-import { ITableRowData, ITableRowDataMap, parseTemplate } from './template'
+import { ITableRowDataMap, parseTemplate } from './template'
 import { IConfigFile, TArrayType, TReturnType } from './types'
 import {
   INIT_CONFIG,
@@ -85,7 +85,10 @@ export const authPrompt = async (opts?: IAuthPromptOpts, forceNewToken?: boolean
   }
   if (opts?.ls) {
     const history = getAuthHistory(config, true)
-    history.unshift({ name: INPUT_GITHUB_TOKEN_MANUALY, value: INPUT_GITHUB_TOKEN_MANUALY })
+    history.unshift({
+      name: INPUT_GITHUB_TOKEN_MANUALY,
+      value: INPUT_GITHUB_TOKEN_MANUALY,
+    })
     const selectResult = await inquirer.prompt({
       type: 'list',
       message: '请选择 token',
@@ -170,7 +173,10 @@ const selectPRPrompt = async () => {
     type: 'list',
     message: '请选择 PR',
     name: 'id',
-    choices: prs.map((v) => ({ name: `${v.title}#${v.number}`, value: v.number })),
+    choices: prs.map((v) => ({
+      name: `${v.title}#${v.number}`,
+      value: v.number,
+    })),
   })
   const result = await getPRPrompt(id)
   return result
@@ -201,9 +207,7 @@ const getPRCommitsPrompt = async (id: number, total: number) => {
     result.push(...r.data)
   }
   return result.filter(
-    (v) => v.author?.login
-      && v.author.login !== config.username
-      && v.commit.message.startsWith('frontend')
+    (v) => v.author?.login && v.author.login !== config.username && v.commit.message.startsWith('frontend')
   )
 }
 
@@ -253,10 +257,7 @@ export const deleteBranchPrompt = async (opts: IDeleteBranchPromptOpts) => {
   logger.success(`分支 "${name}" 删除成功`)
 }
 
-const updateVersionPrompt = async (
-  pr: TArrayType<TReturnType<typeof getPRPrompt>>,
-  opts: IUpdatePRPromptOpts
-) => {
+const updateVersionPrompt = async (pr: TArrayType<TReturnType<typeof getPRPrompt>>, opts: IUpdatePRPromptOpts) => {
   let version = opts.version
   const reg = /^(\d+\.)*\d$/
   const filename = 'package.json'
@@ -332,15 +333,17 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     shell.exec(`git checkout -f -B ${pr.head.ref}`, { cwd: process.cwd() })
     shell.exec('git fetch upstream', { cwd: process.cwd() })
     shell.exec('git merge upstream/master', { cwd: process.cwd() })
-    shell.exec(`git push --set-upstream origin ${pr.head.ref}`, { cwd: process.cwd() })
+    shell.exec(`git push --set-upstream origin ${pr.head.ref}`, {
+      cwd: process.cwd(),
+    })
     pr = await getPRPrompt(pr.number)
   } else {
     pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
     const master = await getUpstreamMasterPrompt()
     logger.log('同步提交中。。。')
-    const newBranchName = `${
-      pr.head.label.split(':')?.[1] || `PR#${pr.number}`
-    }-temp-sync-branch-${Math.random().toString(16).substr(2)}`
+    const newBranchName = `${pr.head.label.split(':')?.[1] || `PR#${pr.number}`}-temp-sync-branch-${Math.random()
+      .toString(16)
+      .substr(2)}`
     const newBranch = await createRefPrompt(master.object.sha, newBranchName)
     logger.log('合并分支中。。。')
     await client.repos.merge({
@@ -369,9 +372,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     groupedCommits[login].push(v.commit.message.split(/[\r\n]+/)[0])
   })
   const commitUsers = Object.keys(groupedCommits)
-  const oldReviewers = (pr.requested_reviewers || [])
-    .map((v) => v?.login)
-    .filter((v) => v) as string[]
+  const oldReviewers = (pr.requested_reviewers || []).map((v) => v?.login).filter((v) => v) as string[]
   const diffReviewers = oldReviewers
     .reduce(
       (x, y) => {
@@ -413,10 +414,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   })
   const titleMatch = /^(.*)(\s\().*(\))$/.exec(pr.title)
   const titleSuffix = opts.version && versionChanged ? ` (v${opts.version})` : ''
-  const newTitle
-    = titleMatch?.[1] && versionChanged
-      ? `${titleMatch[1]}${titleSuffix}`
-      : `${pr.title}${titleSuffix}`
+  const newTitle = titleMatch?.[1] && versionChanged ? `${titleMatch[1]}${titleSuffix}` : `${pr.title}${titleSuffix}`
   logger.debug('old PR body:\n', pr.body)
   const newBody = await parseTemplate(baseBodyDataMap, pr.body)
   logger.debug('new PR body:\n', newBody)
@@ -430,127 +428,6 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
   logger.success('PR 信息更新成功')
   logger.success(`“PR#${pr.number}: ${opts.title || newTitle}” 同步成功`)
   logger.info(`PR: ${pr.html_url}`)
-}
-
-interface ICheckPromptOtps {
-  id?: string | number
-  author?: string
-  commit?: string
-  msg?: string | boolean
-  uat?: string | boolean
-  prod?: string | boolean
-}
-
-export const checkPrompt = async (opts: ICheckPromptOtps) => {
-  const { client } = await getBaseData()
-  const owner = UPSTREAM_OWNER
-  const repo = REPO_NAME
-
-  if (!opts.msg && !opts.uat && !opts.prod) {
-    logger.error('至少得提供一个修改内容')
-    logger.info('可以通过 -u -p -msg 提供，细节请通过 -h 了解更多')
-    process.exit(1)
-  }
-  logger.log(`正在为 “PR${Number(opts.id) ? `#${opts.id}` : ''}” 的提交的验证信息进行更新。。。`)
-  const pr = Number(opts.id) ? await getPRPrompt(Number(opts.id)) : await selectPRPrompt()
-  const commits = await getPRCommitsPrompt(pr.number, pr.commits)
-  if (!opts.author) {
-    const set = new Set<string>()
-    commits.forEach((v) => {
-      if (v.author?.login) {
-        set.add(v.author.login)
-      }
-    })
-    const choices: string[] = []
-    set.forEach((v) => choices.push(v))
-    opts.author = await (
-      await inquirer.prompt({
-        type: 'list',
-        name: 'author',
-        message: '请选择提交的作者',
-        choices,
-      })
-    ).author
-  }
-  const currentCommits = commits
-    .filter((v) => v.author?.login === opts.author)
-    .map((v) => {
-      v.commit.message = v.commit.message.split(/[\r\n]+/)[0]
-      return v
-    })
-
-  if (!opts.commit) {
-    opts.commit = await (
-      await inquirer.prompt({
-        type: 'list',
-        name: 'commit',
-        message: '请选择提交的标题',
-        choices: currentCommits.map((v) => v.commit.message) as string[],
-      })
-    ).commit
-  }
-  const commit = currentCommits.filter((v) => v.commit.message === opts.commit)?.[0]
-  if (!commit) {
-    logger.error(`未找到该提交（${opts.author}: ${opts.commit}）`)
-    process.exit(1)
-  }
-  logger.log('更新 PR body 中。。。')
-  const data: Partial<ITableRowData> = {
-    name: opts.author,
-    title: opts.commit,
-  }
-  if (opts.uat) {
-    if (opts.uat === 'true') {
-      data.uatChecked = true
-    } else if (opts.uat === 'false') {
-      data.uatChecked = false
-    } else if (typeof opts.uat === 'boolean') {
-      data.uatChecked = await getBooleanPrompt('UAT 验证是否成功')
-    } else {
-      console.error('-u, --uat 参数必须传 "true" 或者 "false"')
-      process.exit(1)
-    }
-  }
-  if (opts.prod) {
-    if (opts.prod === 'true') {
-      data.prodChecked = true
-    } else if (opts.prod === 'false') {
-      data.prodChecked = false
-    } else if (typeof opts.prod === 'boolean') {
-      data.prodChecked = await getBooleanPrompt('线上验证是否成功')
-    } else {
-      console.error('-p, --prod 参数必须传 "true" 或者 "false"')
-      process.exit(1)
-    }
-  }
-  if (opts.msg) {
-    if (typeof opts.msg === 'boolean') {
-      data.msg = (
-        await inquirer.prompt({
-          type: 'input',
-          name: 'value',
-          message: '请输入备注内容',
-          validate: (v) => !!v,
-        })
-      ).value
-    } else {
-      data.msg = opts.msg.trim()
-    }
-  }
-  logger.debug('data:\n', data)
-  const newBody = await parseTemplate(data as ITableRowData, pr.body, true)
-  logger.debug('newBody:\n', newBody)
-  await client.pulls.update({
-    owner,
-    repo,
-    pull_number: pr.number,
-    body: newBody,
-  })
-  logger.success('PR body 更新成功')
-  logger.success(
-    `“PR#${pr.number}: ${pr.title}” 的提交 “${opts.author}: ${opts.commit}” 的验证信息更新成功`
-  )
-  logger.info(`https://github.com/${UPSTREAM_OWNER}/${REPO_NAME}/pull/${pr.number}`)
 }
 
 interface ICreatePRPromptOpts {
@@ -568,7 +445,9 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
   if (!opts.branch && !opts.ls) {
     if (config.useGitCLI) {
       shell.exec('git fetch upstream', { cwd: process.cwd() })
-      shell.exec(`git checkout -f -B ${branchName} upstream/master`, { cwd: process.cwd() })
+      shell.exec(`git checkout -f -B ${branchName} upstream/master`, {
+        cwd: process.cwd(),
+      })
       shell.exec(`git push -u origin ${branchName}`, { cwd: process.cwd() })
     } else {
       const masterRef = await getUpstreamMasterPrompt()
@@ -636,7 +515,8 @@ const ACTIVITY_REPO = [
   'web-utils',
 ]
 
-const getDateBySortType = (type: IGetRecentPRPromptOpts['type'], data: any) => (type === 'created' ? data.created_at : data.updated_at)
+const getDateBySortType = (type: IGetRecentPRPromptOpts['type'], data: any) =>
+  type === 'created' ? data.created_at : data.updated_at
 
 export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
   const { config, client } = await getBaseData()
@@ -651,9 +531,7 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
   const sinceDate = opts.since ? day(opts.since) : null
   const untilDate = opts.until ? day(opts.until) : null
   logger.log(
-    `查询最近的活动中${
-      ((opts.since || opts.until) && `(${opts.since || '--'} to ${opts.until || '--'})`) || ''
-    }。。。`
+    `查询最近的活动中${((opts.since || opts.until) && `(${opts.since || '--'} to ${opts.until || '--'})`) || ''}。。。`
   )
   const activities: IRecentPR[] = []
   // eslint-disable-next-line no-restricted-syntax
@@ -671,17 +549,15 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
         direction: 'desc',
       })
       const lastData = data[data.length - 1]
-      if (
-        !lastData
-        || (sinceDate && sinceDate.isAfter(day(getDateBySortType(opts.type, lastData) as string)))
-      ) {
+      if (!lastData || (sinceDate && sinceDate.isAfter(day(getDateBySortType(opts.type, lastData) as string)))) {
         notEnd = false
       }
       data
         .filter(
-          (v) => v.user?.login === (config.username || '')
-            && (untilDate ? !day(getDateBySortType(opts.type, v)).isAfter(untilDate) : true)
-            && (sinceDate ? !sinceDate.isAfter(day(getDateBySortType(opts.type, v))) : true)
+          (v) =>
+            v.user?.login === (config.username || '') &&
+            (untilDate ? !day(getDateBySortType(opts.type, v)).isAfter(untilDate) : true) &&
+            (sinceDate ? !sinceDate.isAfter(day(getDateBySortType(opts.type, v))) : true)
         )
         .forEach((v) => {
           const item = {
@@ -716,9 +592,9 @@ export const getRecentPRPrompt = async (opts: IGetRecentPRPromptOpts) => {
       Object.keys(result[firstKey]).forEach((secondKey) => {
         md += `    - ${secondKey}\n`
         result[firstKey][secondKey].forEach((v) => {
-          md += `        - [${v.title}${
-            (opts.date && v.create && day(v.create).format('YYYY-MM-DD')) || ''
-          }](${v.url})\n`
+          md += `        - [${v.title}${(opts.date && v.create && day(v.create).format('YYYY-MM-DD')) || ''}](${
+            v.url
+          })\n`
         })
       })
     })

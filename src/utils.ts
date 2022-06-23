@@ -29,7 +29,7 @@ export const writeConfigFile = (data?: IConfigFile) => {
     fs.writeFileSync(getConfigFilePath(), formatToJSONString(data))
   } catch (e) {
     logger.error(`更新配置文件失败\n${e.message}`)
-    logger.error('可以尝试通过 \'config -r\' 指令来重置配置信息')
+    logger.error("可以尝试通过 'config -r' 指令来重置配置信息")
     throw e
   }
 }
@@ -45,13 +45,14 @@ export const getConfigFile = () => {
     if (!fs.existsSync(configPath)) {
       writeConfigFile(INIT_CONFIG)
     }
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const config = require(configPath) as IConfigFile
     updateLoggerLevelByDebug(config?.debug)
     updateRepoAndOwnerByConfig(config)
     return config || {}
   } catch (e) {
     logger.error(`读取配置文件失败\n${e.message}`)
-    logger.error('可以尝试通过 \'config -r\' 指令来重置配置信息')
+    logger.error("可以尝试通过 'config -r' 指令来重置配置信息")
     throw e
   }
 }
@@ -62,20 +63,17 @@ export const mergeConfigFile = (data: IConfigFile = {}) => {
 }
 
 export function getAuthHistory(config: IConfigFile): string[]
-export function getAuthHistory(
-  config: IConfigFile,
-  isChoices: boolean
-): Array<{ name: string; value: string }>
+export function getAuthHistory(config: IConfigFile, isChoices: boolean): Array<{ name: string; value: string }>
 export function getAuthHistory(config: IConfigFile, isChoices?: boolean) {
   const history = (config.tokenHistory || '').split(',').filter((v) => !!v)
   return isChoices
     ? history.map((v) => {
-      const match = /(.*)(: )(.*)/.exec(v)
-      // eslint-disable-next-line no-nested-ternary
-      const value = !match ? v : match[3] ? match[3] : match[1]
-      const data = { name: v, value }
-      return data
-    })
+        const match = /(.*)(: )(.*)/.exec(v)
+        // eslint-disable-next-line no-nested-ternary
+        const value = !match ? v : match[3] ? match[3] : match[1]
+        const data = { name: v, value }
+        return data
+      })
     : history
 }
 
@@ -93,28 +91,28 @@ export const escapeHtml = (html = '') => {
 
   for (index = match.index; index < html.length; index++) {
     switch (html.charCodeAt(index)) {
-    // eslint-disable-next-line no-magic-numbers
-    case 34: // "
-      escape = '&quot;'
-      break
-    // eslint-disable-next-line no-magic-numbers
-    case 38: // &
-      escape = '&amp;'
-      break
-    // eslint-disable-next-line no-magic-numbers
-    case 39: // '
-      escape = '&#39;'
-      break
-    case 60: // <
-      escape = '&lt;'
-      break
-    // eslint-disable-next-line no-magic-numbers
-    case 62: // >
-      escape = '&gt;'
-      break
-    default:
-      // eslint-disable-next-line no-continue
-      continue
+      // eslint-disable-next-line no-magic-numbers
+      case 34: // "
+        escape = '&quot;'
+        break
+      // eslint-disable-next-line no-magic-numbers
+      case 38: // &
+        escape = '&amp;'
+        break
+      // eslint-disable-next-line no-magic-numbers
+      case 39: // '
+        escape = '&#39;'
+        break
+      case 60: // <
+        escape = '&lt;'
+        break
+      // eslint-disable-next-line no-magic-numbers
+      case 62: // >
+        escape = '&gt;'
+        break
+      default:
+        // eslint-disable-next-line no-continue
+        continue
     }
 
     if (lastIndex !== index) {
@@ -125,7 +123,5 @@ export const escapeHtml = (html = '') => {
     str += escape
   }
 
-  return lastIndex !== index
-    ? str + html.substring(lastIndex, index)
-    : str
+  return lastIndex !== index ? str + html.substring(lastIndex, index) : str
 }

@@ -106,9 +106,7 @@ const formatDOMToString = async (dom: JSDOM) => {
     printWidth: Number.MAX_SAFE_INTEGER,
     tabWidth: 0,
   })
-  return result
-    .replace(/(-\s\[[x\s]\]\sOK)/g, '\r\n\r\n  $1\r\n\r\n')
-    .replace(/(<\/tr>)/g, '$1\r\n\r\n')
+  return result.replace(/(-\s\[[x\s]\]\sOK)/g, '\r\n\r\n  $1\r\n\r\n').replace(/(<\/tr>)/g, '$1\r\n\r\n')
 }
 
 const createTemplate = async (data: ITableRowDataMap, outputTableBodyDOM: boolean) => {
@@ -156,7 +154,7 @@ const parseTableRow = (dom: HTMLElement) => {
       } else if (BOOL_VALUE_TH.includes(v.class)) {
         result = /- \[x\]/.test(value)
       }
-      (data as any)[v.field] = result
+      ;(data as any)[v.field] = result
     })
     if (!map[(data as ITableRowData).name]) {
       map[(data as ITableRowData).name] = []
@@ -179,8 +177,7 @@ const updatePRDesc = (dom: HTMLElement, data: ITableRowData) => {
       // eslint-disable-next-line no-continue
       continue
     }
-    const currentName
-      = row.getElementsByClassName(ETableRowType.Name)?.[0]?.innerHTML?.trim?.() ?? ''
+    const currentName = row.getElementsByClassName(ETableRowType.Name)?.[0]?.innerHTML?.trim?.() ?? ''
     if (currentName) {
       lastName = currentName
     }
