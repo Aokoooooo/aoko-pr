@@ -1,6 +1,7 @@
 import commander from 'commander'
 import pkg from '../package.json'
-import { authPrompt, configPrompt, createPRPrompt, deleteBranchPrompt, updatePRPrompt } from './promotes'
+import { configPrompt, createPRPrompt, updatePRPrompt } from './promotes'
+import { authPrompt, deleteBranchPrompt } from './promotes/utils'
 
 commander.version(pkg.version)
 
