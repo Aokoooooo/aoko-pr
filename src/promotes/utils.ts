@@ -144,6 +144,8 @@ export interface IUpdatePRPromptOpts {
   id?: string | number
   title?: string
   version?: string | boolean
+  android?: string
+  ios?: string
 }
 
 export const getPRCommitsPrompt = async (id: number, total: number) => {

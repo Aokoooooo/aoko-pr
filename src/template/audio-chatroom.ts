@@ -1,8 +1,8 @@
 import { JSDOM } from 'jsdom'
 import { logger } from '../logger'
-import { escapeHtml } from '../utils'
 import {
   createElement,
+  createHeader,
   createTableHeader,
   createTableRow,
   formatDOMToString,
@@ -18,7 +18,7 @@ enum ETableDataItemType {
   Msg = 'msg',
 }
 
-export interface TableDataItem {
+interface TableDataItem {
   name: string
   title: string
   uatChecked: boolean
@@ -32,7 +32,7 @@ export interface TableDataMap {
 }
 
 const PR_TABLE_BODY_ID = 'PR-table-body'
-const COMPATIBILITY_TABPE_BODY_ID = 'compatibility-table-body'
+const COMPATIBILITY_TABLE_BODY_ID = 'compatibility-table-body'
 
 const PR_TABLE_CONFIGS: TableConfigItem<TableDataItem>[] = [
   {
@@ -67,28 +67,95 @@ const PR_TABLE_CONFIGS: TableConfigItem<TableDataItem>[] = [
   },
 ]
 
-const createTemplate = async (data: TableDataMap, outputTableBodyDOM: boolean) => {
-  const DOM = new JSDOM()
-  const table = createElement(DOM.window, 'table')
-  table.appendChild(createTableHeader(DOM.window, PR_TABLE_CONFIGS))
-  const tableBody = createElement(DOM.window, 'tbody')
-  tableBody.id = PR_TABLE_BODY_ID
-  Object.values(data).forEach((list) =>
-    list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, PR_TABLE_CONFIGS, v)))
+const COMPATIBILITY_TABLE_CONFIG: TableConfigItem<TableDataItem>[] = [
+  {
+    class: ETableDataItemType.Name,
+    header: '目标',
+    render: (v) => (v.showName ? v.name : ''),
+    field: 'name',
+  },
+  {
+    class: ETableDataItemType.Title,
+    header: '环境',
+    render: (v) => v.title,
+    field: 'title',
+  },
+  {
+    class: ETableDataItemType.Uat,
+    header: 'UAT 测试',
+    render: (v) => renderCheckbox(v.uatChecked),
+    field: 'uatChecked',
+  },
+  {
+    class: ETableDataItemType.Prod,
+    header: '线上测试',
+    render: (v) => renderCheckbox(v.prodChecked),
+    field: 'prodChecked',
+  },
+  {
+    class: ETableDataItemType.Msg,
+    header: '备注',
+    render: (v) => v.msg || '',
+    field: 'msg',
+  },
+]
+
+const BOOL_VALUE_TH = [ETableDataItemType.Uat, ETableDataItemType.Prod]
+
+const COMPATIBILITY_TEST_LIST = ['直播广场', '直播房间', '我的贵族', '我的等级', '贵族特权']
+const COMPATIBILITY_TEST_ENV_LIST = ['Android 5', 'iOS 9', 'IE 11']
+
+const generateCompatibilityTableData = () => {
+  const map: TableDataMap = {}
+  COMPATIBILITY_TEST_LIST.map((name) =>
+    COMPATIBILITY_TEST_ENV_LIST.map((title, i) => ({
+      name,
+      title,
+      uatChecked: false,
+      prodChecked: false,
+      msg: '',
+      showName: i === 0,
+    }))
   )
-  if (outputTableBodyDOM) {
-    return tableBody.outerHTML
+    .flat()
+    .forEach((v) => {
+      if (!map[v.name]) {
+        map[v.name] = []
+      }
+      map[v.name].push(v)
+    })
+  return map
+}
+
+const createTemplate = async (
+  prData: TableDataMap,
+  compatibilityData: TableDataMap = generateCompatibilityTableData()
+) => {
+  const DOM = new JSDOM()
+
+  const createTable = (data: TableDataMap, config: TableConfigItem<any>[], id: string) => {
+    const table = createElement(DOM.window, 'table')
+    table.appendChild(createTableHeader(DOM.window, config))
+    const tableBody = createElement(DOM.window, 'tbody')
+    tableBody.id = id
+    Object.values(data).forEach((list) =>
+      list.forEach((v) => tableBody.appendChild(createTableRow(DOM.window, config, v)))
+    )
+    table.appendChild(tableBody)
+    DOM.window.document.body.appendChild(table)
   }
-  table.appendChild(tableBody)
-  DOM.window.document.body.appendChild(table)
+
+  createHeader(DOM.window, 'PR 更新内容')
+  createTable(prData, PR_TABLE_CONFIGS, PR_TABLE_BODY_ID)
+  createHeader(DOM.window, '环境兼容性测试')
+  createTable(compatibilityData, COMPATIBILITY_TABLE_CONFIG, COMPATIBILITY_TABLE_BODY_ID)
+
   const result = await formatDOMToString(DOM)
   return result
 }
 
-const BOOL_VALUE_TH = [ETableDataItemType.Uat, ETableDataItemType.Prod]
-
-const parseTableRow = (dom: HTMLElement) => {
-  const map: { [name: string]: TableDataItem[] } = {}
+const parsePRTableRow = <T extends TableDataItem | TableDataItem>(dom: HTMLElement, config: TableConfigItem<any>[]) => {
+  const map: { [name: string]: T[] } = {}
   const rows = dom.getElementsByTagName('tr')
   if (!rows.length) {
     return null
@@ -99,8 +166,8 @@ const parseTableRow = (dom: HTMLElement) => {
     if (!row) {
       continue
     }
-    const data: Partial<TableDataItem> = {}
-    PR_TABLE_CONFIGS.forEach((v) => {
+    const data: Partial<T> = {}
+    config.forEach((v) => {
       const value = row.getElementsByClassName(v.class)?.[0]?.innerHTML?.trim?.() ?? ''
       let result: string | boolean = value
       if (v.class === ETableDataItemType.Name) {
@@ -113,100 +180,33 @@ const parseTableRow = (dom: HTMLElement) => {
       }
       ;(data as any)[v.field] = result
     })
-    if (!map[(data as TableDataItem).name]) {
-      map[(data as TableDataItem).name] = []
+    if (!map[(data as T).name]) {
+      map[(data as T).name] = []
     }
-    map[(data as TableDataItem).name].push(data as TableDataItem)
+    map[(data as T).name].push(data as T)
   }
   return map
 }
 
-const updatePRDesc = (dom: HTMLElement, data: TableDataItem) => {
-  const rows = dom.getElementsByTagName('tr')
-  if (!rows.length) {
-    return false
-  }
-  const rowMap: { [name: string]: HTMLTableRowElement[] } = {}
-  let lastName = ''
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows.item(i)
-    if (!row) {
-      continue
-    }
-    const currentName = row.getElementsByClassName(ETableDataItemType.Name)?.[0]?.innerHTML?.trim?.() ?? ''
-    if (currentName) {
-      lastName = currentName
-    }
-    if (!rowMap[lastName]) {
-      rowMap[lastName] = []
-    }
-    rowMap[lastName].push(row)
-  }
-  const targetCommits = rowMap[`@${data.name}`]
-  if (!targetCommits) {
-    return false
-  }
-  for (let i = 0; i < targetCommits.length; i++) {
-    const titleDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Title)?.[0]
-    if (titleDOM && escapeHtml(titleDOM.innerHTML.trim()) === escapeHtml(data.title)) {
-      const msgDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Msg)?.[0]
-      if (typeof data.msg !== 'undefined' && msgDOM) {
-        msgDOM.innerHTML = data.msg || ''
-      }
-      const uatDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Uat)?.[0]
-      if (typeof data.uatChecked !== 'undefined' && uatDOM) {
-        uatDOM.innerHTML = renderCheckbox(data.uatChecked)
-      }
-      const prodDOM = targetCommits[i].getElementsByClassName(ETableDataItemType.Prod)?.[0]
-      if (typeof data.prodChecked !== 'undefined' && prodDOM) {
-        prodDOM.innerHTML = renderCheckbox(data.prodChecked)
-      }
-      return true
-    }
-  }
-  return false
-}
-
-export const parseTemplate = async (
-  data: TableDataMap | TableDataItem,
-  body: string | null,
-  isUpdateTableRow?: boolean
-) => {
+export const parseTemplate = async (data: TableDataMap, body: string | null) => {
   if (!body) {
-    if (isUpdateTableRow) {
-      logger.error('历史 PR body 为空，请确认 PR body 存在')
-      process.exit(1)
-    }
-    return createTemplate(data as TableDataMap, false)
+    return createTemplate(data)
   }
   const DOM = new JSDOM(body)
-  const container = DOM.window.document.body
-  const tableBody = DOM.window.document.getElementById(PR_TABLE_BODY_ID)
-  if (!container || !tableBody) {
-    if (isUpdateTableRow) {
-      logger.error('解析历史 PR body 失败，请确认 PR body 存在且符合解析规则')
-      process.exit(1)
-    }
-    return createTemplate(data as TableDataMap, false)
+  const prTableBody = DOM.window.document.getElementById(PR_TABLE_BODY_ID)
+  if (!prTableBody) {
+    return createTemplate(data)
   }
-  if (isUpdateTableRow) {
-    const updated = updatePRDesc(tableBody, data as TableDataItem)
-    if (!updated) {
-      logger.error('未找到合适的更新对象，请确认 PR body 存在且符合解析规则')
-      process.exit(1)
-    }
-    return formatDOMToString(DOM)
-  }
-  const oldData = parseTableRow(tableBody)
-  logger.debug('oldData:\n', oldData)
-  if (oldData) {
-    Object.keys(oldData).forEach((name) => {
+  const oldPRData = parsePRTableRow(prTableBody, PR_TABLE_CONFIGS)
+  logger.debug('oldPRData:\n', oldPRData)
+  if (oldPRData) {
+    Object.keys(oldPRData).forEach((name) => {
       // 去除 @
       const list = (data as TableDataMap)[name.substr(1)]
       if (!list) {
         return
       }
-      const oldDataList = oldData[name]
+      const oldDataList = oldPRData[name]
       oldDataList.forEach((v) => {
         for (let i = 0; i < list.length; i++) {
           const reg = /\(#\d+\)$/
@@ -219,8 +219,28 @@ export const parseTemplate = async (
       })
     })
   }
+  const defaultCompatibilityData = generateCompatibilityTableData()
+  const oldCompatibilityBody = DOM.window.document.getElementById(COMPATIBILITY_TABLE_BODY_ID)
+  if (oldCompatibilityBody) {
+    const oldCompatibilityData = parsePRTableRow(oldCompatibilityBody, COMPATIBILITY_TABLE_CONFIG)
+    if (oldCompatibilityData) {
+      Object.keys(oldCompatibilityData).forEach((name) => {
+        const list = defaultCompatibilityData[name]
+        if (!list) {
+          return
+        }
+        oldCompatibilityData[name].forEach((v) => {
+          for (const i of list) {
+            if (COMPATIBILITY_TEST_ENV_LIST.some((title) => i.title.startsWith(title) && v.title.startsWith(title))) {
+              i.uatChecked = v.uatChecked
+              i.prodChecked = v.prodChecked
+              i.msg = v.msg
+            }
+          }
+        })
+      })
+    }
+  }
   logger.debug('newData:\n', data)
-  const table = await createTemplate(data as TableDataMap, true)
-  tableBody.outerHTML = table
-  return formatDOMToString(DOM)
+  return createTemplate(data, defaultCompatibilityData)
 }

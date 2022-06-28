@@ -167,7 +167,7 @@ export const updatePRPrompt = async (opts: IUpdatePRPromptOpts) => {
     title: opts.title || newTitle,
   })
   logger.success('PR 信息更新成功')
-  logger.success(`“PR#${pr.number}: ${opts.title || newTitle}” 同步成功`)
+  logger.success(`“#${pr.number}: ${opts.title || newTitle}” 同步成功`)
   logger.info(`PR: ${pr.html_url}`)
 }
 
@@ -176,6 +176,8 @@ interface ICreatePRPromptOpts {
   branch?: string
   ls?: boolean
   version?: string
+  android?: string
+  ios?: string
 }
 
 export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
@@ -218,5 +220,5 @@ export const createPRPrompt = async (opts: ICreatePRPromptOpts) => {
     base: 'stable',
   })
   logger.success(`上线 PR "${opts.name}" 创建成功`)
-  updatePRPrompt({ id: createPR.data.number, version: opts.version })
+  updatePRPrompt({ id: createPR.data.number, version: opts.version, android: opts.android, ios: opts.ios })
 }

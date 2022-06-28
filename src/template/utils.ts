@@ -16,6 +16,12 @@ export const renderCheckbox = (checked: boolean) => {
 export const createElement = (window: DOMWindow, name: keyof HTMLElementTagNameMap) =>
   window.document.createElement(name)
 
+export const createHeader = (window: DOMWindow, info: string) => {
+  const title = createElement(window, 'h2')
+  title.innerHTML = info
+  window.document.body.appendChild(title)
+}
+
 export const createTableHeader = <TableData = Record<string, unknown>>(
   window: DOMWindow,
   configs: TableConfigItem<TableData>[]
